@@ -235,6 +235,7 @@ export function AdminManager({ sectionKey, fixedFilter, headingOverride, descrip
   const [bannerBatchProgress, setBannerBatchProgress] = useState("");
   const backupImportInputRef = useRef<HTMLInputElement>(null);
   const bannerBatchInputRef = useRef<HTMLInputElement>(null);
+  const bannerModalBatchInputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (loading || !sectionPresentation || !window.location.hash.startsWith("#page-section-")) return;
     const target = document.getElementById(window.location.hash.slice(1));
@@ -435,10 +436,10 @@ export function AdminManager({ sectionKey, fixedFilter, headingOverride, descrip
       if (backupImportInputRef.current) backupImportInputRef.current.value = "";
     }
   }
-  async function uploadBannerBatch(files: File[]) {
+  async function uploadBannerBatch(files: File[], templateOverride?: RecordItem | null) {
     if (!files.length || !section || sectionKey !== "banners") return;
     setError("");
-    const template = rows.find((row) => row.status === "PUBLISHED") || rows[0];
+    const template = templateOverride || rows.find((row) => row.status === "PUBLISHED") || rows[0];
     const page = String(fixedFilter?.page || template?.page || "home");
     const nextSortOrder = rows.reduce((maximum, row) => Math.max(maximum, Number(row.sortOrder || 0)), -1) + 1;
     let completed = 0;
@@ -493,6 +494,7 @@ export function AdminManager({ sectionKey, fixedFilter, headingOverride, descrip
     } finally {
       setBannerBatchProgress("");
       if (bannerBatchInputRef.current) bannerBatchInputRef.current.value = "";
+      if (bannerModalBatchInputRef.current) bannerModalBatchInputRef.current.value = "";
     }
   }
   async function restore(row: RecordItem) {
@@ -1087,16 +1089,46 @@ export function AdminManager({ sectionKey, fixedFilter, headingOverride, descrip
                     }}
                   />
                 ) : (
-                  <CmsEditorFields
-                    section={section}
-                    editing={editing}
-                    relations={relations}
-                    csrf={csrf}
-                    hiddenFieldKeys={[
-                      ...Object.keys(fixedFilter || {}),
-                      ...(sectionKey === "banners" ? ["key"] : []),
-                    ]}
-                  />
+                  <>
+                    <CmsEditorFields
+                      section={section}
+                      editing={editing}
+                      relations={relations}
+                      csrf={csrf}
+                      hiddenFieldKeys={[
+                        ...Object.keys(fixedFilter || {}),
+                        ...(sectionKey === "banners" ? ["key"] : []),
+                      ]}
+                    />
+                    {bannerPresentation && (
+                      <section className="banner-modal-batch-panel">
+                        <div className="banner-modal-batch-copy">
+                          <strong>继续添加多张轮播图片或视频</strong>
+                          <span>可一次选择多张图片、MP4 或 WebM；每个文件会自动成为一张新轮播，并沿用当前这张的中英文文字和按钮。</span>
+                        </div>
+                        <input
+                          ref={bannerModalBatchInputRef}
+                          className="sr-only"
+                          type="file"
+                          accept=".jpg,.jpeg,.png,.webp,.mp4,.webm"
+                          multiple
+                          onChange={(event) => void uploadBannerBatch(
+                            Array.from(event.currentTarget.files || []),
+                            editing,
+                          )}
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-primary banner-modal-batch-button"
+                          disabled={Boolean(bannerBatchProgress)}
+                          onClick={() => bannerModalBatchInputRef.current?.click()}
+                        >
+                          <Upload size={16} />
+                          {bannerBatchProgress ? `正在上传 ${bannerBatchProgress}` : "选择并上传多张轮播图 / 视频"}
+                        </button>
+                      </section>
+                    )}
+                  </>
                 )}
               </div>
               {sectionKey === "inquiries" && editing?.id && (
