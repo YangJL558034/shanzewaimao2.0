@@ -87,7 +87,7 @@ export default async function ContentAdminPage({ searchParams }: { searchParams:
       <div className="mt-3"><AdminManager sectionKey="navigation" fixedFilter={{ location: "HEADER" }} headingOverride="前台顶部菜单" descriptionOverride="修改顶部菜单的文字、链接、显示状态和顺序" /></div>
       <div className="mt-3"><AdminManager sectionKey="navigation" fixedFilter={{ location: "FOOTER" }} headingOverride="网站底部快速链接" descriptionOverride="修改网站底部链接的文字、地址、显示状态和顺序" /></div>
     </> : <>
-      <AdminManager sectionKey="banners" fixedFilter={{ page: active.key }} headingOverride={`${active.label}首屏文字与背景图`} descriptionOverride="主标题、强调标题、说明、按钮、背景图和轮播顺序" presentation="page-banners" pageLabel={active.label} />
+      <AdminManager sectionKey="banners" fixedFilter={{ page: active.key }} headingOverride={`${active.label}首屏多图 / 视频轮播`} descriptionOverride="可不限量添加背景图片或视频，逐张修改主标题、强调标题、说明、按钮和轮播顺序" presentation="page-banners" pageLabel={active.label} />
       <div className="mt-3"><AdminManager sectionKey="page-sections" fixedFilter={{ page: active.key }} headingOverride={`${active.label}正文内容`} descriptionOverride="按照前台顺序修改每个区域的文字、数字、列表、按钮和图片" presentation="page-sections" pageLabel={active.label} /></div>
       {active.key === "quality" && <>
         <div className="mt-3"><AdminManager sectionKey="certificates" headingOverride="认证资质照片（逐张上传）" descriptionOverride="CE、FCC、RoHS、3C、UN38.3 等认证都在这里逐项上传完整证书照片、修改文字和显示顺序" /></div>

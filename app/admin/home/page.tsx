@@ -84,7 +84,7 @@ export default async function HomeAdminPage({
           <>
             <section className="home-editor-explainer">
               <strong>前台最上方大标题和背景图就在这里修改</strong>
-              <span>每张卡片是一张轮播图。点击“编辑文字与背景”可修改标题、蓝色强调标题、说明、按钮和背景图片；新增多张后会自动轮播。</span>
+              <span>每张卡片是一张轮播内容。图片或视频都可本地上传；新增并发布 2 张以上后，每 2 秒平滑切换，顺序可自由调整。</span>
             </section>
             <AdminManager
               sectionKey="banners"
@@ -92,6 +92,7 @@ export default async function HomeAdminPage({
               headingOverride="首页首屏轮播"
               descriptionOverride="直接管理前台首页最上方的文字、按钮和背景图"
               presentation="home-banners"
+              pageLabel="首页"
             />
           </>
         )}

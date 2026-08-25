@@ -18,19 +18,26 @@ export function Hero({ page, title, accent, subtitle, image, ctaLabel = "Learn M
   const slide = slideList[active] || slideList[0];
   const mediaKind = visualMediaKind(slide.image);
   const embedProvider = mediaKind === "embed" ? getVideoEmbedProvider(slide.image || "") : "unknown";
-  const backgroundImage = mediaKind === "image" ? slide.image : `/references/${page}.png`;
-  const hasVideoSlides = slideList.some((item) => ["video", "embed"].includes(visualMediaKind(item.image)));
+  const activeIsVideo = mediaKind === "video" || mediaKind === "embed";
   const move = (delta: number) => setActive((current) => (current + delta + slideList.length) % slideList.length);
-  return <section className={`page-hero ${mediaKind === "video" || mediaKind === "embed" ? "has-video" : ""}`} style={{ "--hero-image": `url(${backgroundImage})` } as React.CSSProperties}>
-    {mediaKind === "video" && <div className="hero-media-layer" aria-hidden="true"><video key={slide.id} src={slide.image || undefined} autoPlay muted loop playsInline preload="metadata" controls={false} controlsList="nodownload nofullscreen noplaybackrate" disablePictureInPicture /></div>}
-    {mediaKind === "embed" && <div className={`hero-media-layer hero-media-embed hero-media-${embedProvider}`} aria-hidden="true"><iframe key={slide.id} src={getVideoEmbedUrl(slide.image || "", true) || undefined} title="" tabIndex={-1} loading="eager" allow="autoplay; encrypted-media" referrerPolicy="strict-origin-when-cross-origin" /></div>}
+  return <section className={`page-hero ${activeIsVideo ? "has-video" : ""}`}>
+    <div className="hero-carousel-media" aria-hidden="true">
+      {slideList.map((item, index) => {
+        const kind = visualMediaKind(item.image);
+        if (kind === "video" || kind === "embed") return null;
+        const source = kind === "image" ? item.image : `/references/${page}.png`;
+        return <div key={item.id} className={`hero-image-layer ${index === active ? "is-active" : ""}`} style={{ backgroundImage: `url(${source})` }} />;
+      })}
+      {mediaKind === "video" && <div className="hero-media-layer"><video key={slide.id} src={slide.image || undefined} autoPlay muted loop playsInline preload="metadata" controls={false} controlsList="nodownload nofullscreen noplaybackrate" disablePictureInPicture /></div>}
+      {mediaKind === "embed" && <div className={`hero-media-layer hero-media-embed hero-media-${embedProvider}`}><iframe key={slide.id} src={getVideoEmbedUrl(slide.image || "", true) || undefined} title="" tabIndex={-1} loading="eager" allow="autoplay; encrypted-media" referrerPolicy="strict-origin-when-cross-origin" /></div>}
+    </div>
     <div className="container-site"><div className="hero-content">
       <h1 className="hero-title">{slide.title}<br/>{slide.accent && <strong>{slide.accent}</strong>}</h1>
       <p className="hero-subtitle">{slide.subtitle}</p>
       <div className="hero-points"><span className="hero-point"><Factory size={29} color="#0861df"/> OEM/ODM<br/>Solutions</span><span className="hero-point"><ShieldCheck size={29} color="#0861df"/> Quality First</span><span className="hero-point"><Globe2 size={29} color="#0861df"/> Global Export</span></div>
       <Link href={slide.ctaHref} className="btn btn-primary"><PackageCheck size={17}/>{slide.ctaLabel} →</Link>
     </div></div>
-    {slideList.length > 1 && !hasVideoSlides && <>
+    {slideList.length > 1 && !activeIsVideo && <>
       <button type="button" className="hero-arrow hero-arrow-prev" aria-label="上一张" onClick={() => move(-1)}><ChevronLeft size={22}/></button>
       <button type="button" className="hero-arrow hero-arrow-next" aria-label="下一张" onClick={() => move(1)}><ChevronRight size={22}/></button>
       <div className="hero-dots" aria-label="轮播图切换">{slideList.map((item, index) => <button type="button" key={item.id} className={`hero-dot ${index === active ? "active" : ""}`} aria-label={`第 ${index + 1} 张`} onClick={() => setActive(index)} />)}</div>

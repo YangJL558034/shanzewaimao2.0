@@ -232,7 +232,9 @@ export function AdminManager({ sectionKey, fixedFilter, headingOverride, descrip
   const [error, setError] = useState("");
   const [trashPreview, setTrashPreview] = useState<RecordItem | null>(null);
   const [backupImporting, setBackupImporting] = useState(false);
+  const [bannerBatchProgress, setBannerBatchProgress] = useState("");
   const backupImportInputRef = useRef<HTMLInputElement>(null);
+  const bannerBatchInputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (loading || !sectionPresentation || !window.location.hash.startsWith("#page-section-")) return;
     const target = document.getElementById(window.location.hash.slice(1));
@@ -431,6 +433,66 @@ export function AdminManager({ sectionKey, fixedFilter, headingOverride, descrip
     } finally {
       setBackupImporting(false);
       if (backupImportInputRef.current) backupImportInputRef.current.value = "";
+    }
+  }
+  async function uploadBannerBatch(files: File[]) {
+    if (!files.length || !section || sectionKey !== "banners") return;
+    setError("");
+    const template = rows.find((row) => row.status === "PUBLISHED") || rows[0];
+    const page = String(fixedFilter?.page || template?.page || "home");
+    const nextSortOrder = rows.reduce((maximum, row) => Math.max(maximum, Number(row.sortOrder || 0)), -1) + 1;
+    let completed = 0;
+    try {
+      for (const [index, file] of files.entries()) {
+        setBannerBatchProgress(`${index + 1}/${files.length}`);
+        const uploadBody = new FormData();
+        uploadBody.set("file", file);
+        uploadBody.set("name", file.name);
+        uploadBody.set("alt", file.name.replace(/\.[^.]+$/, ""));
+        uploadBody.set("folder", `banners/${page}`);
+        const uploadToken = await getFreshCsrfToken();
+        const uploadResponse = await fetch("/api/admin/upload", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "x-csrf-token": uploadToken },
+          body: uploadBody,
+        });
+        const uploadData = await uploadResponse.json();
+        if (!uploadResponse.ok) throw new Error(`${file.name}：${uploadData.error || "上传失败"}`);
+
+        const now = Date.now();
+        const bannerBody = {
+          key: `${page}_slide_${now}_${index}`,
+          page,
+          title: String(template?.title || `${pageLabel}首屏轮播`),
+          subtitle: String(template?.subtitle || ""),
+          description: String(template?.description || ""),
+          image: String(uploadData.data.path),
+          ctaLabel: String(template?.ctaLabel || "了解更多"),
+          ctaHref: String(template?.ctaHref || "/contact"),
+          sortOrder: nextSortOrder + index,
+          status: "PUBLISHED",
+          ...(template?._translations ? { _translations: template._translations } : {}),
+        };
+        const createToken = await getFreshCsrfToken();
+        const createResponse = await fetch("/api/admin/banners", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "content-type": "application/json", "x-csrf-token": createToken },
+          body: JSON.stringify(bannerBody),
+        });
+        const createData = await createResponse.json();
+        if (!createResponse.ok) throw new Error(`${file.name}：${createData.error || "轮播创建失败"}`);
+        completed += 1;
+      }
+      alert(`已成功上传并发布 ${completed} 张${pageLabel}首屏轮播图。`);
+      await load();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "批量上传轮播图失败");
+      if (completed) await load();
+    } finally {
+      setBannerBatchProgress("");
+      if (bannerBatchInputRef.current) bannerBatchInputRef.current.value = "";
     }
   }
   async function restore(row: RecordItem) {
@@ -690,9 +752,31 @@ export function AdminManager({ sectionKey, fixedFilter, headingOverride, descrip
                 上传文件
               </button>
             )}
+            {bannerPresentation && (
+              <>
+                <input
+                  ref={bannerBatchInputRef}
+                  className="sr-only"
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.webp,.mp4,.webm"
+                  multiple
+                  onChange={(event) => void uploadBannerBatch(Array.from(event.currentTarget.files || []))}
+                />
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm banner-batch-upload-btn"
+                  disabled={Boolean(bannerBatchProgress)}
+                  onClick={() => bannerBatchInputRef.current?.click()}
+                >
+                  <Upload size={14} />
+                  {bannerBatchProgress ? `正在上传 ${bannerBatchProgress}` : "批量上传多张轮播图"}
+                </button>
+              </>
+            )}
             {!section.readonly && (
               <button
                 className="btn btn-primary btn-sm"
+                disabled={Boolean(bannerBatchProgress)}
                 onClick={() => setEditing(null)}
               >
                 <Plus size={14} />
@@ -709,6 +793,15 @@ export function AdminManager({ sectionKey, fixedFilter, headingOverride, descrip
           </div>
         </div>
         {error && <div className="form-status error m-4">{error}</div>}
+        {bannerPresentation && (
+          <div className="banner-carousel-guide">
+            <div>
+              <strong>{pageLabel}首屏已配置 {filtered.length} 张</strong>
+              <span>其中 {filtered.filter((row) => row.status === "PUBLISHED").length} 张已发布</span>
+            </div>
+            <p>同一页面可添加多张图片或视频；发布 2 张及以上后，前台会按“显示顺序”每 2 秒自动轮播。每一张都能单独修改中英文文字、按钮和背景媒体。</p>
+          </div>
+        )}
         {sectionKey === "media" ? (
           <div className="media-grid-admin">
             {filtered.map((row) => (
