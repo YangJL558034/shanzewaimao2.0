@@ -102,7 +102,7 @@ SMTP 留空时，询盘仍然正常入库，邮件任务保持待发送状态，
 
 - bcrypt（cost 12）密码哈希
 - 随机 Session Token 仅以 SHA-256 哈希形式存库
-- HttpOnly、Secure（生产环境）、SameSite Strict Cookie
+- HttpOnly、SameSite Lax Cookie；Secure 根据访客 HTTPS 或反向代理 `X-Forwarded-Proto` 自动启用
 - 登录 IP 限流、连续失败账号锁定、登录日志
 - 每个后台 API 的服务端 RBAC 权限校验
 - 双提交 CSRF Token 与同源检查
@@ -161,6 +161,14 @@ npm start
 ```
 
 反向代理需要转发真实 IP（`X-Forwarded-For`）和 HTTPS。生产环境建议：
+
+```nginx
+proxy_set_header Host $host;
+proxy_set_header X-Forwarded-Host $host;
+proxy_set_header X-Forwarded-Proto $scheme;
+proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+proxy_set_header X-Real-IP $remote_addr;
+```
 
 - 把 `NEXT_PUBLIC_SITE_URL` 设为正式 HTTPS 域名。
 - 使用支持持久化磁盘和 Node.js 长进程的平台（VPS、Docker、Railway Volume、Render Disk 等）。

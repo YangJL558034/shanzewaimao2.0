@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { checkRateLimit, getClientIp, hashToken, sameToken } from "@/lib/security";
+import { checkRateLimit, getClientIp, hashToken, sameToken, secureCookieForRequest } from "@/lib/security";
 import { createSession, SESSION_COOKIE, verifyPassword } from "@/lib/auth";
 
 const schema = z.object({ username: z.string().min(2).max(254), password: z.string().min(8).max(128), captcha: z.string().regex(/^\d{4}$/) });
@@ -69,6 +69,6 @@ export async function POST(request: Request) {
   await db.loginLog.create({ data: { ...meta, userId: user.id, success: true } });
   const session = await createSession(user.id, request);
   const response = NextResponse.json({ ok: true, userName: user.name });
-  response.cookies.set(SESSION_COOKIE, session.token, { httpOnly: true, sameSite: "strict", secure: process.env.NODE_ENV === "production", path: "/", expires: session.expiresAt });
+  response.cookies.set(SESSION_COOKIE, session.token, { httpOnly: true, sameSite: "lax", secure: secureCookieForRequest(request), path: "/", expires: session.expiresAt });
   return response;
 }

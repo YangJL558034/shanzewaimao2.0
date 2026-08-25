@@ -24,8 +24,21 @@ function cookieValue(request: Request, name: string) {
 export function csrfTokenForRequest(request: Request) {
   const session = cookieValue(request, "enercore_session");
   const browserBinding = session || `${getClientIp(request)}|${request.headers.get("user-agent") || "unknown"}`;
-  const secret = process.env.CSRF_SECRET || process.env.AUTH_SECRET || "local-development-csrf-secret";
+  const secret = process.env.CSRF_SECRET || process.env.AUTH_SECRET || process.env.APP_SECRET || "local-development-csrf-secret";
   return hashToken(`${secret}:${browserBinding}`);
+}
+
+/**
+ * Reverse proxies normally terminate TLS before forwarding the request to
+ * Next.js over HTTP. Cookie security must follow the visitor-facing protocol,
+ * not NODE_ENV or the internal request URL.
+ */
+export function secureCookieForRequest(request: Request) {
+  if (process.env.COOKIE_SECURE === "true") return true;
+  if (process.env.COOKIE_SECURE === "false") return false;
+  const forwardedProto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim().toLowerCase();
+  if (forwardedProto) return forwardedProto === "https";
+  return new URL(request.url).protocol === "https:";
 }
 
 export function getClientIp(request: Request) {
@@ -53,17 +66,25 @@ export function sameToken(a?: string | null, b?: string | null) {
 
 export async function verifyCsrf(request: Request) {
   const origin = request.headers.get("origin");
-  const requestOrigin = new URL(request.url).origin;
-  const configuredOrigin = process.env.NEXT_PUBLIC_SITE_URL ? new URL(process.env.NEXT_PUBLIC_SITE_URL).origin : "";
   if (origin) {
-    let sameHost = false;
+    let allowed = false;
     try {
-      sameHost = new URL(origin).hostname === new URL(request.url).hostname;
+      const originUrl = new URL(origin);
+      const requestUrl = new URL(request.url);
+      const forwardedHost = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
+      const host = forwardedHost || request.headers.get("host") || requestUrl.host;
+      const configuredOrigin = process.env.NEXT_PUBLIC_SITE_URL ? new URL(process.env.NEXT_PUBLIC_SITE_URL).origin : "";
+      const fetchSite = request.headers.get("sec-fetch-site");
+      allowed = fetchSite !== "cross-site" && (
+        originUrl.host === host ||
+        originUrl.host === requestUrl.host ||
+        originUrl.origin === configuredOrigin
+      );
     } catch {
-      sameHost = false;
+      allowed = false;
     }
     const localProxyOrigin = origin === "http://localhost:3001" || origin === "http://127.0.0.1:3001";
-    if (origin !== requestOrigin && origin !== configuredOrigin && !sameHost && !localProxyOrigin) return false;
+    if (!allowed && !localProxyOrigin) return false;
   }
   const cookie = cookieValue(request, "enercore_csrf_v2");
   const header = request.headers.get("x-csrf-token");

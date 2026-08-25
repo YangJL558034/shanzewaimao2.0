@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
-import { hashToken, verifyCsrf } from "@/lib/security";
+import { hashToken, secureCookieForRequest, verifyCsrf } from "@/lib/security";
 import { SESSION_COOKIE } from "@/lib/auth";
 
 export async function POST(request: Request) {
@@ -14,8 +14,9 @@ export async function POST(request: Request) {
   }
   if (token) await db.session.deleteMany({ where: { tokenHash: hashToken(token) } });
   const response = NextResponse.json({ ok: true });
-  response.cookies.set(SESSION_COOKIE, "", { httpOnly: true, sameSite: "strict", secure: process.env.NODE_ENV === "production", path: "/", expires: new Date(0) });
-  response.cookies.set("enercore_csrf_v2", "", { sameSite: "strict", secure: process.env.NODE_ENV === "production", path: "/", expires: new Date(0) });
+  const secure = secureCookieForRequest(request);
+  response.cookies.set(SESSION_COOKIE, "", { httpOnly: true, sameSite: "lax", secure, path: "/", expires: new Date(0) });
+  response.cookies.set("enercore_csrf_v2", "", { sameSite: "lax", secure, path: "/", expires: new Date(0) });
   return response;
 }
 
