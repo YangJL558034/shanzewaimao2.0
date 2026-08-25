@@ -1,0 +1,1 @@
+ALTER TABLE "PageSection" ADD COLUMN "items" TEXT NOT NULL DEFAULT '[]';

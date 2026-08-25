@@ -1,0 +1,47 @@
+{
+  "name": "enercore-b2b-cms",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "scripts": {
+    "postinstall": "prisma generate",
+    "dev": "next dev --hostname 0.0.0.0",
+    "build": "prisma generate && next build",
+    "start": "next start --hostname 0.0.0.0",
+    "lint": "tsc --noEmit",
+    "db:migrate": "prisma migrate dev",
+    "storage:prepare": "node scripts/prepare-storage.mjs",
+    "db:deploy": "npm run storage:prepare && prisma migrate deploy",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:studio": "prisma studio",
+    "email:worker": "tsx scripts/email-worker.ts"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "6.12.0",
+    "bcryptjs": "3.0.2",
+    "clsx": "2.1.1",
+    "lucide-react": "0.468.0",
+    "next": "16.3.2",
+    "nodemailer": "9.0.5",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "22.17.2",
+    "@types/nodemailer": "6.4.17",
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.2",
+    "autoprefixer": "10.4.21",
+    "postcss": "8.5.26",
+    "prisma": "6.12.0",
+    "tailwindcss": "3.4.17",
+    "tsx": "4.20.4",
+    "typescript": "5.9.2"
+  }
+}

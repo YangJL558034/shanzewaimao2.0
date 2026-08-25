@@ -1,0 +1,5 @@
+import { NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { requireApiUser } from "@/lib/auth";
+import { verifyCsrf } from "@/lib/security";
+export async function POST(request:Request,{params}:{params:Promise<{id:string}>}){const auth=await requireApiUser("settings.write");if("error" in auth)return auth.error;if(!(await verifyCsrf(request)))return NextResponse.json({error:"Invalid CSRF token"},{status:403});const {id}=await params;const item=await db.trashItem.findUnique({where:{id}});if(!item)return NextResponse.json({error:"Not found"},{status:404});const data=JSON.parse(item.dataJson);await db.$transaction(async(tx)=>{const target=(tx as unknown as Record<string,{create:Function}>)[item.entityType];if(!target)throw new Error("Unsupported entity type");await target.create({data});await tx.trashItem.delete({where:{id}});await tx.auditLog.create({data:{userId:auth.user.id,action:"RESTORE",entityType:item.entityType,entityId:item.entityId,afterJson:item.dataJson}})});return NextResponse.json({ok:true});}

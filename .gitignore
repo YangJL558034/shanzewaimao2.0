@@ -1,0 +1,15 @@
+node_modules
+.next
+.env
+work/
+outputs/
+*.tsbuildinfo
+prisma/*.db
+prisma/*.db-*
+storage/private/*
+!storage/private/.gitkeep
+public/uploads/*
+!public/uploads/.gitkeep
+backups/*
+!backups/.gitkeep
+*.log

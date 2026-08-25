@@ -1,0 +1,584 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum InquiryStatus {
+  NEW
+  ASSIGNED
+  CONTACTED
+  QUALIFIED
+  QUOTED
+  WON
+  LOST
+  SPAM
+}
+
+enum EmailStatus {
+  PENDING
+  SENDING
+  SENT
+  FAILED
+  CANCELLED
+}
+
+model User {
+  id                String              @id @default(cuid())
+  email             String              @unique
+  name              String
+  passwordHash      String
+  avatar            String?
+  isActive          Boolean             @default(true)
+  failedLoginCount  Int                 @default(0)
+  lockedUntil       DateTime?
+  lastLoginAt       DateTime?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  roles             UserRole[]
+  sessions          Session[]
+  loginLogs         LoginLog[]
+  auditLogs         AuditLog[]
+  assignedInquiries Inquiry[]           @relation("InquiryAssignee")
+  inquiryNotes      InquiryNote[]
+  assignmentsFrom   InquiryAssignment[] @relation("InquiryAssignmentFrom")
+  assignmentsTo     InquiryAssignment[] @relation("InquiryAssignmentTo")
+  assignmentsMade   InquiryAssignment[] @relation("InquiryAssignmentActor")
+}
+
+model Role {
+  id          String           @id @default(cuid())
+  name        String           @unique
+  description String?
+  isSystem    Boolean          @default(false)
+  users       UserRole[]
+  permissions RolePermission[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model Permission {
+  id          String           @id @default(cuid())
+  key         String           @unique
+  name        String
+  description String?
+  roles       RolePermission[]
+}
+
+model UserRole {
+  userId String
+  roleId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  ip        String?
+  userAgent String?
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+}
+
+model LoginLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  email     String
+  ip        String?
+  userAgent String?
+  success   Boolean
+  reason    String?
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  actorName  String?
+  actorEmail String?
+  action     String
+  entityType String
+  entityId   String?
+  beforeJson String?
+  afterJson  String?
+  ip         String?
+  createdAt  DateTime @default(now())
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
+
+model Setting {
+  id        String   @id @default(cuid())
+  group     String   @default("general")
+  key       String   @unique
+  value     String
+  type      String   @default("text")
+  isPublic  Boolean  @default(false)
+  updatedAt DateTime @updatedAt
+}
+
+model Locale {
+  id           String        @id @default(cuid())
+  code         String        @unique
+  name         String
+  isDefault    Boolean       @default(false)
+  isActive     Boolean       @default(true)
+  sortOrder    Int           @default(0)
+  translations Translation[]
+}
+
+model Translation {
+  id         String @id @default(cuid())
+  localeId   String
+  entityType String
+  entityId   String
+  field      String
+  value      String
+  locale     Locale @relation(fields: [localeId], references: [id], onDelete: Cascade)
+
+  @@unique([localeId, entityType, entityId, field])
+  @@index([entityType, entityId])
+}
+
+model NavigationItem {
+  id        String           @id @default(cuid())
+  label     String
+  href      String
+  location  String           @default("HEADER")
+  sortOrder Int              @default(0)
+  isVisible Boolean          @default(true)
+  parentId  String?
+  parent    NavigationItem?  @relation("NavTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children  NavigationItem[] @relation("NavTree")
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+}
+
+model Media {
+  id        String   @id @default(cuid())
+  name      String
+  fileName  String
+  path      String
+  mimeType  String
+  size      Int
+  width     Int?
+  height    Int?
+  alt       String?
+  folder    String   @default("general")
+  isPrivate Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Banner {
+  id          String        @id @default(cuid())
+  key         String        @unique
+  title       String
+  subtitle    String?
+  description String?
+  image       String?
+  ctaLabel    String?
+  ctaHref     String?
+  page        String        @default("home")
+  sortOrder   Int           @default(0)
+  status      ContentStatus @default(PUBLISHED)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model Page {
+  id          String        @id @default(cuid())
+  slug        String        @unique
+  title       String
+  excerpt     String?
+  content     String
+  template    String        @default("standard")
+  status      ContentStatus @default(DRAFT)
+  publishedAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model PageSection {
+  id          String   @id @default(cuid())
+  page        String
+  key         String
+  title       String
+  subtitle    String?
+  content     String?
+  image       String?
+  items       String   @default("[]")
+  buttonLabel String?
+  buttonHref  String?
+  sortOrder   Int      @default(0)
+  isVisible   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([page, key])
+  @@index([page, sortOrder])
+}
+
+model SeoMeta {
+  id          String   @id @default(cuid())
+  route       String   @unique
+  title       String
+  description String
+  keywords    String?
+  canonical   String?
+  ogImage     String?
+  noIndex     Boolean  @default(false)
+  schemaJson  String?
+  updatedAt   DateTime @updatedAt
+}
+
+model ProductCategory {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  description String?
+  image       String?
+  icon        String?
+  sortOrder   Int       @default(0)
+  isVisible   Boolean   @default(true)
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Product {
+  id             String            @id @default(cuid())
+  categoryId     String
+  name           String
+  slug           String            @unique
+  sku            String            @unique
+  tagline        String?
+  summary        String
+  description    String
+  coverImage     String?
+  hoverImage     String?
+  specifications String            @default("{}")
+  features       String            @default("[]")
+  applications   String            @default("[]")
+  faqs           String            @default("[]")
+  isFeatured     Boolean           @default(false)
+  sortOrder      Int               @default(0)
+  status         ContentStatus     @default(DRAFT)
+  publishedAt    DateTime?
+  category       ProductCategory   @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  images         ProductImage[]
+  downloads      ProductDownload[]
+  inquiries      Inquiry[]
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  @@index([categoryId, status])
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  productId String
+  url       String
+  alt       String?
+  sortOrder Int     @default(0)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model ProductDownload {
+  id        String  @id @default(cuid())
+  productId String
+  title     String
+  fileUrl   String
+  fileType  String?
+  fileSize  String?
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model NewsCategory {
+  id        String @id @default(cuid())
+  name      String
+  slug      String @unique
+  sortOrder Int    @default(0)
+  posts     News[]
+}
+
+model News {
+  id          String        @id @default(cuid())
+  categoryId  String
+  title       String
+  slug        String        @unique
+  excerpt     String
+  content     String
+  coverImage  String?
+  author      String        @default("ENERCORE Editorial")
+  isFeatured  Boolean       @default(false)
+  status      ContentStatus @default(DRAFT)
+  publishedAt DateTime?
+  category    NewsCategory  @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([categoryId, status, publishedAt])
+}
+
+model FactoryEquipment {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  image       String?
+  metric      String?
+  sortOrder   Int      @default(0)
+  isVisible   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Workshop {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  image       String?
+  sortOrder   Int      @default(0)
+  isVisible   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Certificate {
+  id            String    @id @default(cuid())
+  name          String
+  issuer        String?
+  certificateNo String?
+  image         String?
+  fileUrl       String?
+  expiresAt     DateTime?
+  sortOrder     Int       @default(0)
+  isVisible     Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Inquiry {
+  id                String              @id @default(cuid())
+  referenceNo       String              @unique
+  fullName          String
+  companyName       String
+  email             String
+  phone             String?
+  country           String
+  productId         String?
+  productInterest   String
+  message           String
+  source            String              @default("website")
+  locale            String              @default("en")
+  status            InquiryStatus       @default(NEW)
+  priority          String              @default("normal")
+  assignedToId      String?
+  ip                String?
+  userAgent         String?
+  consentAt         DateTime
+  lastContactAt     DateTime?
+  nextFollowUpAt    DateTime?
+  product           Product?            @relation(fields: [productId], references: [id], onDelete: SetNull)
+  assignedTo        User?               @relation("InquiryAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  attachments       InquiryAttachment[]
+  notes             InquiryNote[]
+  assignmentHistory InquiryAssignment[]
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  @@index([status, createdAt])
+  @@index([assignedToId, nextFollowUpAt])
+}
+
+model InquiryAttachment {
+  id        String   @id @default(cuid())
+  inquiryId String
+  fileName  String
+  path      String
+  mimeType  String
+  size      Int
+  sha256    String
+  createdAt DateTime @default(now())
+  inquiry   Inquiry  @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+}
+
+model InquiryNote {
+  id           String         @id @default(cuid())
+  inquiryId    String
+  userId       String
+  type         String         @default("note")
+  content      String
+  result       String?
+  statusAfter  InquiryStatus?
+  contactedAt  DateTime?
+  nextActionAt DateTime?
+  createdAt    DateTime       @default(now())
+  inquiry      Inquiry        @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+  user         User           @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([inquiryId, createdAt])
+}
+
+model InquiryAssignment {
+  id             String   @id @default(cuid())
+  inquiryId      String
+  fromAssigneeId String?
+  toAssigneeId   String?
+  assignedById   String
+  reason         String?
+  createdAt      DateTime @default(now())
+  inquiry        Inquiry  @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+  fromAssignee   User?    @relation("InquiryAssignmentFrom", fields: [fromAssigneeId], references: [id], onDelete: SetNull)
+  toAssignee     User?    @relation("InquiryAssignmentTo", fields: [toAssigneeId], references: [id], onDelete: SetNull)
+  assignedBy     User     @relation("InquiryAssignmentActor", fields: [assignedById], references: [id], onDelete: Restrict)
+
+  @@index([inquiryId, createdAt])
+  @@index([toAssigneeId, createdAt])
+}
+
+model EmailTemplate {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  name      String
+  subject   String
+  html      String
+  text      String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model EmailQueue {
+  id            String      @id @default(cuid())
+  templateKey   String
+  to            String
+  cc            String?
+  subject       String
+  html          String
+  text          String?
+  payloadJson   String?
+  status        EmailStatus @default(PENDING)
+  attempts      Int         @default(0)
+  maxAttempts   Int         @default(5)
+  nextAttemptAt DateTime    @default(now())
+  sentAt        DateTime?
+  lastError     String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([status, nextAttemptAt])
+}
+
+model TrashItem {
+  id         String    @id @default(cuid())
+  entityType String
+  entityId   String
+  dataJson   String
+  deletedBy  String?
+  deletedAt  DateTime  @default(now())
+  expiresAt  DateTime?
+
+  @@index([entityType, deletedAt])
+}
+
+model BackupRecord {
+  id        String   @id @default(cuid())
+  fileName  String
+  path      String
+  size      Int
+  checksum  String
+  status    String   @default("completed")
+  createdBy String?
+  createdAt DateTime @default(now())
+}
+
+model RateLimit {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  count       Int      @default(1)
+  windowStart DateTime @default(now())
+  expiresAt   DateTime
+
+  @@index([expiresAt])
+}
+
+model NewsletterSubscriber {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  locale         String    @default("en")
+  source         String    @default("website")
+  isActive       Boolean   @default(true)
+  consentAt      DateTime  @default(now())
+  unsubscribedAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model WebsiteVisit {
+  id          String   @id @default(cuid())
+  visitorHash String
+  path        String
+  referrer    String?
+  locale      String   @default("en")
+  device      String   @default("desktop")
+  ip          String?
+  ipHash      String?
+  countryCode String?
+  country     String?
+  region      String?
+  city        String?
+  geoSource   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([visitorHash, createdAt])
+  @@index([path, createdAt])
+  @@index([countryCode, createdAt])
+}
+
+model GeoIpCache {
+  id          String   @id @default(cuid())
+  ipHash      String   @unique
+  countryCode String?
+  country     String?
+  region      String?
+  city        String?
+  source      String
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([expiresAt])
+}
