@@ -121,7 +121,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ sec
     await db.auditLog.create({ data: { userId: auth.user.id, action: "CREATE", entityType: section.model, entityId: created.id, afterJson: JSON.stringify(created) } });
     const createdRecord = created as Record<string, unknown>;
     const notification = (section.key === "products" || section.key === "news") && createdRecord.status === "PUBLISHED"
-      ? await queuePublicationNotification(section.key === "news" ? "news" : "product", String(createdRecord.id))
+      ? await queuePublicationNotification(section.key === "news" ? "news" : "product", String(createdRecord.id), request)
       : null;
     return NextResponse.json({ data: created, notification }, { status: 201 });
   } catch (error) {

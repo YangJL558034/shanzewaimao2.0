@@ -49,7 +49,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ sect
     const beforeRecord = before as Record<string, unknown>;
     const updatedRecord = updated as Record<string, unknown>;
     const notification = (section.key === "products" || section.key === "news") && beforeRecord.status !== "PUBLISHED" && updatedRecord.status === "PUBLISHED"
-      ? await queuePublicationNotification(section.key === "news" ? "news" : "product", id)
+      ? await queuePublicationNotification(section.key === "news" ? "news" : "product", id, request)
       : null;
     return NextResponse.json({ data: updated, notification });
   } catch (error) {

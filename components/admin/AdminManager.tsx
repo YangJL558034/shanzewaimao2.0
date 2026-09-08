@@ -329,6 +329,7 @@ export function AdminManager({ sectionKey, fixedFilter, headingOverride, descrip
       setError(data.error || "保存失败");
       return;
     }
+    if (data.notification?.error) alert(data.notification.error);
     setEditing(undefined);
     await load();
   }
@@ -369,7 +370,10 @@ export function AdminManager({ sectionKey, fixedFilter, headingOverride, descrip
     });
     const data = await response.json();
     if (!response.ok) setError(data.error || "状态更新失败");
-    else load();
+    else {
+      if (data.notification?.error) alert(data.notification.error);
+      load();
+    }
   }
   async function clone(row: RecordItem) {
     if (!section) return;
@@ -1182,6 +1186,7 @@ const brandFieldGroups = [
     fields: [
       ["site_name", "品牌名称", "text"],
       ["site_tagline", "品牌口号", "text"],
+      ["public_site_url", "网站正式公网地址（邮件按钮使用）", "url"],
       ["logo_url", "公司 Logo", "media"],
       ["company_name", "公司全称", "text"],
       ["company_description", "公司简介", "textarea"],

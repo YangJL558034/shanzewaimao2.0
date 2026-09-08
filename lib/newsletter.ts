@@ -59,8 +59,33 @@ export async function ensureNewsletterTemplates() {
   );
 }
 
-function publicSiteUrl() {
-  return (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/$/, "");
+function normalizePublicSiteUrl(value: string | null | undefined) {
+  if (!value) return null;
+  try {
+    const url = new URL(value.trim());
+    const hostname = url.hostname.toLowerCase();
+    if (!['http:', 'https:'].includes(url.protocol)) return null;
+    if (hostname === 'localhost' || hostname === '::1' || hostname.startsWith('127.') || hostname.startsWith('0.')) return null;
+    return url.origin;
+  } catch {
+    return null;
+  }
+}
+
+function forwardedRequestOrigin(request?: Request) {
+  if (!request) return null;
+  const host = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim()
+    || request.headers.get("host")?.split(",")[0]?.trim();
+  const protocol = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim()
+    || new URL(request.url).protocol.replace(":", "");
+  return host ? normalizePublicSiteUrl(`${protocol}://${host}`) : null;
+}
+
+async function publicSiteUrl(request?: Request) {
+  const configured = await db.setting.findUnique({ where: { key: "public_site_url" }, select: { value: true } }).catch(() => null);
+  return normalizePublicSiteUrl(configured?.value)
+    || normalizePublicSiteUrl(process.env.NEXT_PUBLIC_SITE_URL)
+    || forwardedRequestOrigin(request);
 }
 
 function newsletterSecret() {
@@ -110,7 +135,7 @@ async function translatedPublication(
     : { title: values.name || original.title, summary: values.summary || original.summary };
 }
 
-export async function queuePublicationNotification(kind: PublicationKind, id: string) {
+export async function queuePublicationNotification(kind: PublicationKind, id: string, request?: Request) {
   await ensureNewsletterTemplates();
   const newsRecord = kind === "news"
     ? await db.news.findUnique({ where: { id }, select: { id: true, title: true, excerpt: true, slug: true, status: true } })
@@ -125,7 +150,10 @@ export async function queuePublicationNotification(kind: PublicationKind, id: st
 
   const companySetting = await db.setting.findUnique({ where: { key: "company_name" } });
   const companyName = companySetting?.value || "Shanze New Energy Technology Co., Ltd.";
-  const baseUrl = publicSiteUrl();
+  const baseUrl = await publicSiteUrl(request);
+  if (!baseUrl) {
+    return { queued: 0, skipped: subscribers.length, error: "订阅邮件未发送：请先在“站点设置”填写网站正式公网地址（例如 https://www.example.com），不能使用 localhost。" };
+  }
   const slug = newsRecord?.slug || productRecord?.slug || "";
   const url = `${baseUrl}/${kind === "news" ? "news" : "products"}/${encodeURIComponent(slug)}`;
   const original = newsRecord
