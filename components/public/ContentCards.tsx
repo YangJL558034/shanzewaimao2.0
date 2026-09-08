@@ -1,3 +1,4 @@
+"use client";
 import Link from "next/link";
 import { Cog, Magnet, PackageCheck, PenTool, ShieldCheck, Zap } from "lucide-react";
 import { safeJson } from "@/lib/utils";
@@ -5,17 +6,17 @@ import { getVideoEmbedUrl, visualMediaKind } from "@/lib/media-url";
 
 const positions = ["0 -630px", "25% -630px", "50% -630px", "75% -630px", "100% -630px", "0 -910px", "25% -910px", "50% -910px", "75% -910px", "100% -910px"];
 
-type CategoryCardData = { id: string; name: string; slug: string; description: string | null; image: string | null };
+export type CategoryCardData = { id: string; name: string; slug: string; description: string | null; image: string | null };
 
-export function CategoryCard({ category, index, viewLabel = "View More" }: { category: CategoryCardData; index: number; viewLabel?: string }) {
-  return <article className="card category-card"><div className="card-art" style={{ "--art-image": `url(${category.image || "/references/products.png"})`, "--art-position": category.image ? "center" : positions[index%positions.length], "--art-size": category.image ? "contain" : "940px auto" } as React.CSSProperties}/><div className="card-body"><h3>{category.name}</h3><p>{category.description}</p><Link className="text-link" href={`/products?category=${category.slug}`}>{viewLabel} →</Link></div></article>;
+export function CategoryCard({ category, index, viewLabel = "View More", onSelect, selected = false }: { category: CategoryCardData; index: number; viewLabel?: string; onSelect?: (category: CategoryCardData) => void; selected?: boolean }) {
+  return <article className={`card category-card ${selected ? "is-selected" : ""}`}><div className="card-art" style={{ "--art-image": `url(${category.image || "/references/products.png"})`, "--art-position": category.image ? "center" : positions[index%positions.length], "--art-size": category.image ? "contain" : "940px auto" } as React.CSSProperties}/><div className="card-body"><h3>{category.name}</h3><p>{category.description}</p>{onSelect ? <button type="button" className="text-link category-select-button" onClick={() => onSelect(category)}>{viewLabel} →</button> : <Link className="text-link" href={`/products?category=${category.slug}`}>{viewLabel} →</Link>}</div></article>;
 }
 
-export function CategoryCards({ categories, viewLabel = "View More" }: { categories: CategoryCardData[]; viewLabel?: string }) {
-  return <div className="grid-cards category-grid">{categories.map((category,i)=><CategoryCard category={category} index={i} viewLabel={viewLabel} key={category.id}/>)}</div>;
+export function CategoryCards({ categories, viewLabel = "View More", onSelect, selectedSlug }: { categories: CategoryCardData[]; viewLabel?: string; onSelect?: (category: CategoryCardData) => void; selectedSlug?: string }) {
+  return <div className="grid-cards category-grid">{categories.map((category,i)=><CategoryCard category={category} index={i} viewLabel={viewLabel} onSelect={onSelect} selected={selectedSlug === category.slug} key={category.id}/>)}</div>;
 }
 
-type ProductCardData = {
+export type ProductCardData = {
   id: string;
   name: string;
   slug: string;
@@ -23,6 +24,7 @@ type ProductCardData = {
   hoverImage: string | null;
   features: string;
   isFeatured: boolean;
+  categoryId: string;
 };
 
 function PrimaryProductMedia({ source, position }: { source: string | null; position: string }) {
