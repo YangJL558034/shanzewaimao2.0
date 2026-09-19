@@ -99,7 +99,7 @@ export function LoginForm() {
     <form onSubmit={submit} className="login-card">
       <div className="mb-8">
         <div className="eyebrow">Secure Administration</div>
-        <h1>登录 ENERCORE CMS</h1>
+        <h1>登录 Shanze CMS</h1>
         <p className="muted">使用管理员用户名、密码和验证码登录。</p>
       </div>
       {error && <div className="form-status error mb-4">{error}</div>}

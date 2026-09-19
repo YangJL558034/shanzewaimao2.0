@@ -48,7 +48,7 @@ export async function Footer() {
   const links = localizedFooterNavigation.length
     ? localizedFooterNavigation.map((item) => [item.label, item.href])
     : fallbackLinks;
-  const brandName = pick("site_name", "ENERCORE");
+  const brandName = pick("site_name", "Shanze");
   const logoUrl = map.logo_url || "";
   const socialLinks = [
     { key: "social_facebook", label: "Facebook", icon: Facebook, fallback: "https://www.facebook.com/" },
@@ -127,7 +127,7 @@ export async function Footer() {
               <h3>{pick("footer_contact_title", zh ? "联系我们" : "Contact Us")}</h3>
               <ul>
                 <li><Phone size={13} /> {map.phone || "+86 755 8888 9999"}</li>
-                <li><Mail size={13} /> {map.email || "sales@enercore.com"}</li>
+                <li><Mail size={13} /> {map.email || "sales@shanzesz.com"}</li>
                 <li><MapPin size={13} /> {pick("address", "Building A, No.168 Industrial Road, Shenzhen, Guangdong, China")}</li>
               </ul>
             </div>
@@ -139,7 +139,7 @@ export async function Footer() {
           </div>
           <div className="footer-bottom">
             <span>
-              {pick("footer_copyright", `© ${new Date().getFullYear()} ${pick("company_name", "Enercore Technology Co., Ltd.")} ${zh ? "版权所有。" : "All Rights Reserved."}`)}
+              {pick("footer_copyright", `© ${new Date().getFullYear()} ${pick("company_name", "Shanze New Energy Technology Co., Ltd.")} ${zh ? "版权所有。" : "All Rights Reserved."}`)}
             </span>
             <nav className="footer-legal-links" aria-label={zh ? "法律与网站信息" : "Legal and site information"}>
               {legalLinks.map((item) => <Link href={item.href} key={item.href}>{item.label}</Link>)}

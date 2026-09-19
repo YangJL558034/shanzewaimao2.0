@@ -14,7 +14,7 @@ function buildCatalogPdf(
   products: { name: string; sku: string; summary: string; category: { name: string } }[],
 ) {
   const pages: string[][] = [];
-  const rows = products.length ? products : [{ name: "Product catalog", sku: "", summary: "Add published products in the CMS to populate this catalog.", category: { name: "ENERCORE" } }];
+  const rows = products.length ? products : [{ name: "Product catalog", sku: "", summary: "Add published products in the CMS to populate this catalog.", category: { name: "Shanze" } }];
   for (let index = 0; index < rows.length; index += 9) {
     pages.push(rows.slice(index, index + 9).flatMap((product) => [
       `${product.name}  [${product.sku}]`,
@@ -82,7 +82,7 @@ export async function GET() {
     db.setting.findMany({ where: { key: { in: ["company_name", "site_name"] } } }),
   ]);
   const map = Object.fromEntries(settings.map((setting) => [setting.key, setting.value]));
-  const pdf = buildCatalogPdf(map.company_name || map.site_name || "ENERCORE", products);
+  const pdf = buildCatalogPdf(map.company_name || map.site_name || "Shanze", products);
   return new Response(new Uint8Array(pdf), {
     headers: {
       "Content-Type": "application/pdf",

@@ -17,8 +17,22 @@ export function formatDate(value: Date | string | null | undefined, locale = "en
 }
 
 export function absoluteUrl(path = "") {
-  const base = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-  return new URL(path, base).toString();
+  const productionOrigin = "https://shanzesz.com";
+  const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  let base = productionOrigin;
+
+  if (configured) {
+    try {
+      const candidate = new URL(configured);
+      const localHost = ["localhost", "127.0.0.1", "0.0.0.0"].includes(candidate.hostname);
+      // Never publish development URLs in production SEO metadata or email links.
+      if (process.env.NODE_ENV !== "production" || !localHost) base = candidate.origin;
+    } catch {
+      base = productionOrigin;
+    }
+  }
+
+  return new URL(path, `${base}/`).toString();
 }
 
 export function referenceImage(page: string) {

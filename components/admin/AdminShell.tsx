@@ -80,7 +80,7 @@ export function AdminShell({
           <AdminSidebarState />
           <Link className="brand" href="/admin">
             <span className="brand-mark">E</span>
-            <span><span className="brand-name">ENERCORE</span><span className="brand-tag">MANUFACTURING CMS</span></span>
+            <span><span className="brand-name">Shanze</span><span className="brand-tag">MANUFACTURING CMS</span></span>
           </Link>
           <div className="admin-user"><strong>{user.name}</strong><span>{user.email}</span></div>
           <nav className="admin-nav">

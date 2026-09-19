@@ -1,0 +1,18 @@
+ALTER TABLE "SeoMeta" ADD COLUMN "ogTitle" TEXT;
+ALTER TABLE "SeoMeta" ADD COLUMN "ogDescription" TEXT;
+
+ALTER TABLE "Product" ADD COLUMN "seoTitle" TEXT;
+ALTER TABLE "Product" ADD COLUMN "metaDescription" TEXT;
+ALTER TABLE "Product" ADD COLUMN "canonical" TEXT;
+ALTER TABLE "Product" ADD COLUMN "ogTitle" TEXT;
+ALTER TABLE "Product" ADD COLUMN "ogDescription" TEXT;
+ALTER TABLE "Product" ADD COLUMN "ogImage" TEXT;
+ALTER TABLE "Product" ADD COLUMN "noIndex" BOOLEAN NOT NULL DEFAULT false;
+
+ALTER TABLE "News" ADD COLUMN "seoTitle" TEXT;
+ALTER TABLE "News" ADD COLUMN "metaDescription" TEXT;
+ALTER TABLE "News" ADD COLUMN "canonical" TEXT;
+ALTER TABLE "News" ADD COLUMN "ogTitle" TEXT;
+ALTER TABLE "News" ADD COLUMN "ogDescription" TEXT;
+ALTER TABLE "News" ADD COLUMN "ogImage" TEXT;
+ALTER TABLE "News" ADD COLUMN "noIndex" BOOLEAN NOT NULL DEFAULT false;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Play } from "lucide-react";
 import { getVideoEmbedUrl, visualMediaKind } from "@/lib/media-url";
 
@@ -22,7 +23,7 @@ export function ProductGallery({
   return (
     <div className="product-gallery">
       <div className="product-gallery-main">
-        {currentKind === "video" ? <video key={current.url} src={current.url} controls playsInline preload="metadata" /> : currentKind === "embed" ? <iframe key={current.url} src={getVideoEmbedUrl(current.url) || undefined} title={current.alt || productName} allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen /> : <img src={current.url} alt={current.alt || productName} />}
+        {currentKind === "video" ? <video key={current.url} src={current.url} controls playsInline preload="metadata" /> : currentKind === "embed" ? <iframe key={current.url} src={getVideoEmbedUrl(current.url) || undefined} title={current.alt || productName} allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen /> : <Image key={current.url} src={current.url} alt={current.alt || productName} width={1000} height={1000} priority={active === 0} sizes="(max-width: 768px) 100vw, 50vw" />}
       </div>
       {unique.length > 1 && (
         <div className="product-gallery-thumbs" aria-label="Product images">
@@ -34,7 +35,7 @@ export function ProductGallery({
               onClick={() => setActive(index)}
               aria-label={`View media ${index + 1}`}
             >
-              {visualMediaKind(image.url) === "image" ? <img src={image.url} alt={image.alt || `${productName} ${index + 1}`} /> : <span className="product-video-thumb"><Play size={19} fill="currentColor" /><small>VIDEO</small></span>}
+              {visualMediaKind(image.url) === "image" ? <Image src={image.url} alt={image.alt || `${productName} view ${index + 1}`} width={120} height={120} sizes="120px" /> : <span className="product-video-thumb"><Play size={19} fill="currentColor" /><small>VIDEO</small></span>}
             </button>
           ))}
         </div>

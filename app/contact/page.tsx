@@ -7,7 +7,7 @@ import { getLocale, translateEntities } from "@/lib/i18n";
 import { getPageSectionMap } from "@/lib/page-content";
 
 export const dynamic = "force-dynamic";
-export async function generateMetadata() { return getSeoMetadata("/contact", { title: "Contact & Get a Quote", description: "Send your OEM/ODM charging product requirements to ENERCORE. Our global sales team replies within one business day." }); }
+export async function generateMetadata() { return getSeoMetadata("/contact", { title: "Contact Shanze | Get an OEM/ODM Power Bank Quote", description: "Send your power bank or wireless charger OEM/ODM requirements to Shanze for product and quotation review." }); }
 
 function safeGoogleUrl(value: string | undefined, embed = false) {
   if (!value) return "";
@@ -42,13 +42,13 @@ export default async function ContactPage() {
   const information = section.information;
   const defaultInfo = zh ? [
     { title: "电话 / WhatsApp", value: map.phone || "+86 755 8888 9999", text: "周一至周六，8:30–18:00", image: "" },
-    { title: "电子邮箱", value: map.email || "sales@enercore.com", text: "24 小时内回复", image: "" },
+    { title: "电子邮箱", value: map.email || "sales@shanzesz.com", text: "24 小时内回复", image: "" },
     { title: "办公地址", value: map.company_name_zh || map.company_name || "能核科技有限公司", text: map.address_zh || map.address || "中国广东省深圳市工业路168号A栋", image: "" },
     { title: "工作时间", value: "", text: "周一至周五：8:30–18:00\n周六：8:30–12:00\n周日及法定节假日：休息", image: "" },
   ] : [
     { title: "Phone / WhatsApp", value: map.phone || "+86 755 8888 9999", text: "Mon–Sat, 8:30 AM–6:00 PM", image: "" },
-    { title: "Email Us", value: map.email || "sales@enercore.com", text: "We reply within 24 hours", image: "" },
-    { title: "Office Address", value: map.company_name || "Enercore Technology Co., Ltd.", text: map.address || "Building A, No.168 Industrial Road, Shenzhen, Guangdong, China", image: "" },
+    { title: "Email Us", value: map.email || "sales@shanzesz.com", text: "We reply within 24 hours", image: "" },
+    { title: "Office Address", value: map.company_name || "Shanze New Energy Technology Co., Ltd.", text: map.address || "Building A, No.168 Industrial Road, Shenzhen, Guangdong, China", image: "" },
     { title: "Business Hours", value: "", text: "Monday–Friday: 8:30 AM–6:00 PM\nSaturday: 8:30 AM–12:00 PM\nSunday & Public Holiday: Closed", image: "" },
   ];
   const infoItems = information?.parsedItems.length ? information.parsedItems : defaultInfo;

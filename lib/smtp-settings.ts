@@ -60,8 +60,8 @@ export async function getSmtpConfig(): Promise<SmtpConfig> {
     secure: (values.smtp_secure || process.env.SMTP_SECURE || "false") === "true",
     user: values.smtp_user || process.env.SMTP_USER || "",
     password: decryptSmtpPassword(values.smtp_password || process.env.SMTP_PASSWORD || ""),
-    from: values.smtp_from || process.env.SMTP_FROM || "ENERCORE Website <website@enercore.com>",
-    notifyTo: values.inquiry_notify_to || process.env.INQUIRY_NOTIFY_TO || "sales@enercore.com",
+    from: values.smtp_from || process.env.SMTP_FROM || "Shanze Website <sales@shanzesz.com>",
+    notifyTo: values.inquiry_notify_to || process.env.INQUIRY_NOTIFY_TO || "sales@shanzesz.com",
   };
 }
 

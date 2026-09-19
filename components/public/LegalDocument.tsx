@@ -67,7 +67,7 @@ Contact us through the website inquiry form for privacy questions. We may update
   },
   terms: {
     slug: "terms",
-    seedContent: "These terms govern access to and use of the ENERCORE website.",
+    seedContent: "These terms govern access to and use of the Shanze website.",
     en: {
       title: "Terms of Use",
       excerpt: "Terms governing access to and use of this B2B manufacturing website.",

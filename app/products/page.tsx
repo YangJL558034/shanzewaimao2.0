@@ -6,8 +6,10 @@ import { ProductsCatalog } from "@/components/public/ProductsCatalog";
 import { getSeoMetadata } from "@/lib/seo";
 import { getLocale, translateEntities } from "@/lib/i18n";
 import { getPageSectionMap } from "@/lib/page-content";
+import { JsonLd } from "@/components/public/JsonLd";
+import { absoluteUrl } from "@/lib/utils";
 
-export async function generateMetadata() { return getSeoMetadata("/products", { title: "Charging Products", description: "Explore certified magnetic power banks, wireless chargers, charging accessories and custom OEM/ODM solutions." }); }
+export async function generateMetadata({ searchParams }: { searchParams: Promise<{ category?: string }> }) { const { category } = await searchParams; const metadata = await getSeoMetadata("/products", { title: "Power Banks & Wireless Chargers | OEM/ODM Products | Shanze", description: "Explore Shanze magnetic power banks, wireless chargers and charging products available for OEM/ODM project enquiries." }); return category ? { ...metadata, robots: { index: false, follow: true }, alternates: { canonical: "https://shanzesz.com/products" } } : metadata; }
 
 export default async function ProductsPage({ searchParams }: { searchParams: Promise<{ category?: string }> }) {
   const { category } = await searchParams;
@@ -32,6 +34,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
   const catalog = section.catalog;
   const icons = [Smartphone, Headphones, BriefcaseBusiness, Plane, Store, House];
   return <>
+    <JsonLd data={{ "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [{ "@type": "ListItem", position: 1, name: "Home", item: absoluteUrl("/") }, { "@type": "ListItem", position: 2, name: "Products", item: absoluteUrl("/products") }] }} />
     <Hero page="products" image={banner?.image} title={banner?.title || (zh ? "充电产品" : "Charging Products")} accent={banner?.subtitle || (zh ? "服务全球市场" : "for Global Markets")} subtitle={banner?.description || (zh ? "创新、认证且可靠的充电解决方案，服务全球品牌客户。" : "Innovative, certified and reliable charging solutions engineered for performance, safety and design.")} ctaLabel={banner?.ctaLabel || (zh ? "获取报价" : "Get a Quote")} ctaHref={banner?.ctaHref || "/contact#quote"} slides={banners.map((item) => ({ id: item.id, image: item.image, title: item.title, accent: item.subtitle, subtitle: item.description || "", ctaLabel: item.ctaLabel || (zh ? "获取报价" : "Get a Quote"), ctaHref: item.ctaHref || "/contact#quote" }))} />
     {categoriesSection && featured && <ProductsCatalog categories={localizedCategories} products={localizedProducts} categoriesSection={categoriesSection} featuredSection={featured} initialCategory={category} labels={{ categoryFallback: zh ? "分类" : "Category", products: zh ? "产品" : "Products", viewMore: zh ? "查看更多" : "View More", viewDetails: zh ? "查看详情" : "View Details", new: zh ? "新品" : "NEW", empty: zh ? "该分类暂时没有已发布产品。" : "No published products in this category yet." }} />}
     {applications && <section className="section"><div className="container-site"><div className="center-head"><div className="eyebrow">{applications.subtitle}</div><h2 className="section-title">{applications.title}</h2><p>{applications.content}</p></div><div className="grid-cards grid-cols-2 md:grid-cols-6">{applications.parsedItems.map((item, index) => { const Icon = icons[index % icons.length]; return <div className="feature-card" key={`${item.title}-${index}`}>{item.image ? <img className="application-image" src={item.image} alt="" /> : <Icon className="mx-auto text-brand-600" />}<strong>{item.title}</strong><p>{item.text}</p></div>; })}</div></div></section>}

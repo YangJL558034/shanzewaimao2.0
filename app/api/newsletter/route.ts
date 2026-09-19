@@ -30,11 +30,20 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const email = String(url.searchParams.get("email") || "").trim().toLowerCase();
   const token = String(url.searchParams.get("token") || "");
+  const configuredSite = await db.setting
+    .findUnique({ where: { key: "public_site_url" }, select: { value: true } })
+    .catch(() => null);
+  const publicBase = configuredSite?.value || process.env.NEXT_PUBLIC_SITE_URL || request.url;
+  const resultUrl = (status: string) => new URL(`/unsubscribe?status=${status}`, publicBase);
   if (!z.string().email().safeParse(email).success || !verifyUnsubscribeToken(email, token)) {
-    return NextResponse.json({ error: "Invalid unsubscribe link" }, { status: 400 });
+    return NextResponse.redirect(resultUrl("invalid"), 303);
   }
-  await db.newsletterSubscriber.updateMany({ where: { email }, data: { isActive: false, unsubscribedAt: new Date() } });
-  return NextResponse.redirect(new URL("/?unsubscribed=1", request.url), 303);
+  const subscriber = await db.newsletterSubscriber.findUnique({ where: { email }, select: { isActive: true } });
+  if (!subscriber) return NextResponse.redirect(resultUrl("not-found"), 303);
+  if (subscriber.isActive) {
+    await db.newsletterSubscriber.update({ where: { email }, data: { isActive: false, unsubscribedAt: new Date() } });
+  }
+  return NextResponse.redirect(resultUrl(subscriber.isActive ? "success" : "already"), 303);
 }
 
 export async function POST(request: Request) {

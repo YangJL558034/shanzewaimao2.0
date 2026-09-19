@@ -15,8 +15,10 @@ export async function generateMetadata(): Promise<Metadata> {
   const map = Object.fromEntries(settings.map((setting) => [setting.key, setting.value]));
   const companyName = map.company_name || "Shanze New Energy Technology Co., Ltd.";
   const description = map.company_description || "Certified OEM/ODM manufacturer of charging products for global B2B buyers.";
+  const defaultSocialImage = absoluteUrl("/references/home.png");
+  const googleVerification = process.env.GOOGLE_SITE_VERIFICATION?.trim();
   return {
-    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
+    metadataBase: new URL(absoluteUrl("/")),
     title: { default: companyName, template: `%s | ${companyName}` },
     description,
     icons: {
@@ -26,9 +28,10 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     keywords: ["OEM charger manufacturer", "magnetic power bank", "wireless charger factory", "ODM charging products"],
     alternates: { canonical: absoluteUrl("/") },
-    openGraph: { type: "website", siteName: companyName, title: companyName, description },
-    twitter: { card: "summary_large_image", title: companyName, description },
+    openGraph: { type: "website", siteName: companyName, title: companyName, description, url: absoluteUrl("/"), images: [{ url: defaultSocialImage, width: 1200, height: 630, alt: companyName }] },
+    twitter: { card: "summary_large_image", title: companyName, description, images: [defaultSocialImage] },
     robots: { index: true, follow: true },
+    ...(googleVerification ? { verification: { google: googleVerification } } : {}),
   };
 }
 

@@ -8,7 +8,7 @@ import { getLocale, translateEntities } from "@/lib/i18n";
 import { getPageSectionMap } from "@/lib/page-content";
 
 export const dynamic = "force-dynamic";
-export async function generateMetadata() { return getSeoMetadata("/factory", { title: "Factory", description: "Explore ENERCORE's advanced charging product manufacturing facility, equipment, production processes and logistics." }); }
+export async function generateMetadata() { return getSeoMetadata("/factory", { title: "Power Bank Factory in China | Shanze Manufacturing", description: "Explore Shanze charging product manufacturing equipment, production processes, workshop areas and quality-control support in China." }); }
 
 export default async function FactoryPage() {
   const locale = await getLocale();

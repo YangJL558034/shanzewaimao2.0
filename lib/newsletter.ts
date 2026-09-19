@@ -2,7 +2,7 @@ import "server-only";
 
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { db } from "@/lib/db";
-import { renderTemplate } from "@/lib/email";
+import { processEmailQueue, renderTemplate } from "@/lib/email";
 
 export type PublicationKind = "news" | "product";
 
@@ -207,7 +207,20 @@ export async function queuePublicationNotification(kind: PublicationKind, id: st
       queued += result.count;
     }
   }
-  return { queued, skipped };
+  if (!queued) return { queued, skipped };
+
+  try {
+    const delivery = await processEmailQueue(Math.min(Math.max(queued, 25), 200));
+    if (!delivery.configured) {
+      return { queued, skipped, delivery, error: "订阅通知已进入待发送队列，但邮件服务器尚未配置。请先在后台“邮件服务器”中保存 SMTP 配置。" };
+    }
+    if (delivery.failed) {
+      return { queued, skipped, delivery, error: `订阅通知已创建，但有 ${delivery.failed} 封发送失败，请在邮件队列中查看失败原因。` };
+    }
+    return { queued, skipped, delivery };
+  } catch (error) {
+    return { queued, skipped, error: `订阅通知已进入待发送队列，但立即发送失败：${error instanceof Error ? error.message : "未知错误"}` };
+  }
 }
 
 export const newsletterTemplateVariableHelp = templateVariables;

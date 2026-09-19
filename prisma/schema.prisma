@@ -257,6 +257,8 @@ model SeoMeta {
   keywords    String?
   canonical   String?
   ogImage     String?
+  ogTitle     String?
+  ogDescription String?
   noIndex     Boolean  @default(false)
   schemaJson  String?
   updatedAt   DateTime @updatedAt
@@ -295,6 +297,13 @@ model Product {
   sortOrder      Int               @default(0)
   status         ContentStatus     @default(DRAFT)
   publishedAt    DateTime?
+  seoTitle       String?
+  metaDescription String?
+  canonical      String?
+  ogTitle        String?
+  ogDescription  String?
+  ogImage        String?
+  noIndex        Boolean           @default(false)
   category       ProductCategory   @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   images         ProductImage[]
   downloads      ProductDownload[]
@@ -340,7 +349,14 @@ model News {
   excerpt     String
   content     String
   coverImage  String?
-  author      String        @default("ENERCORE Editorial")
+  author      String        @default("Shanze Editorial")
+  seoTitle       String?
+  metaDescription String?
+  canonical      String?
+  ogTitle        String?
+  ogDescription  String?
+  ogImage        String?
+  noIndex        Boolean       @default(false)
   isFeatured  Boolean       @default(false)
   status      ContentStatus @default(DRAFT)
   publishedAt DateTime?

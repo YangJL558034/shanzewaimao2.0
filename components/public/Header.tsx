@@ -41,8 +41,8 @@ export async function Header() {
       brand={{
         name:
           locale === "zh"
-            ? settingMap.site_name_zh || settingMap.site_name || "ENERCORE"
-            : settingMap.site_name || "ENERCORE",
+            ? settingMap.site_name_zh || settingMap.site_name || "Shanze"
+            : settingMap.site_name || "Shanze",
         tagline:
           locale === "zh"
             ? settingMap.site_tagline_zh || settingMap.site_tagline || ""
