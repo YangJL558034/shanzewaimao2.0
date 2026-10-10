@@ -19,7 +19,7 @@ export function AutoScrollCarousel({
   itemsPerView?: 4 | 5 | 6;
 }) {
   const viewportRef = useRef<HTMLDivElement>(null);
-  const dragRef = useRef({ active: false, startX: 0, scrollLeft: 0 });
+  const dragRef = useRef({ active: false, startX: 0, scrollLeft: 0, moved: false });
   const [paused, setPaused] = useState(false);
   const items = Children.toArray(children);
   const hasOverflow = items.length > itemsPerView;
@@ -53,25 +53,36 @@ export function AutoScrollCarousel({
     if (event.pointerType === "mouse" && event.button !== 0) return;
     const viewport = viewportRef.current;
     if (!viewport) return;
-    dragRef.current = { active: true, startX: event.clientX, scrollLeft: viewport.scrollLeft };
-    viewport.setPointerCapture(event.pointerId);
-    viewport.classList.add("is-dragging");
-    setPaused(true);
+    dragRef.current = { active: true, startX: event.clientX, scrollLeft: viewport.scrollLeft, moved: false };
   }
 
   function drag(event: PointerEvent<HTMLDivElement>) {
     const viewport = viewportRef.current;
     if (!viewport || !dragRef.current.active) return;
-    viewport.scrollLeft = dragRef.current.scrollLeft - (event.clientX - dragRef.current.startX);
+    const dx = event.clientX - dragRef.current.startX;
+    if (!dragRef.current.moved && Math.abs(dx) >= 5) {
+      dragRef.current.moved = true;
+      viewport.setPointerCapture(event.pointerId);
+      viewport.classList.add("is-dragging");
+      viewport.style.cursor = "grabbing";
+      setPaused(true);
+    }
+    if (dragRef.current.moved) {
+      viewport.scrollLeft = dragRef.current.scrollLeft - dx;
+    }
   }
 
   function endDrag(event: PointerEvent<HTMLDivElement>) {
     const viewport = viewportRef.current;
     if (!viewport || !dragRef.current.active) return;
     dragRef.current.active = false;
-    if (viewport.hasPointerCapture(event.pointerId)) viewport.releasePointerCapture(event.pointerId);
-    viewport.classList.remove("is-dragging");
-    setPaused(false);
+    if (dragRef.current.moved) {
+      viewport.classList.remove("is-dragging");
+      viewport.style.cursor = "";
+      setPaused(false);
+      if (viewport.hasPointerCapture(event.pointerId)) viewport.releasePointerCapture(event.pointerId);
+      event.preventDefault();
+    }
   }
 
   return (

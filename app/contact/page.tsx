@@ -4,7 +4,7 @@ import { Hero } from "@/components/public/Hero";
 import { InquiryForm } from "@/components/public/InquiryForm";
 import { getSeoMetadata } from "@/lib/seo";
 import { getLocale, translateEntities } from "@/lib/i18n";
-import { getPageSectionMap } from "@/lib/page-content";
+import { getPageSectionMap, buildSettingsMap } from "@/lib/page-content";
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata() { return getSeoMetadata("/contact", { title: "Contact Shanze | Get an OEM/ODM Power Bank Quote", description: "Send your power bank or wireless charger OEM/ODM requirements to Shanze for product and quotation review." }); }
@@ -35,11 +35,19 @@ export default async function ContactPage() {
     translateEntities("ProductCategory", rawCategories, ["name"], locale),
     translateEntities("Banner", rawBanners, ["title", "subtitle", "description", "ctaLabel"], locale),
   ]);
-  const map = Object.fromEntries(settings.map((setting) => [setting.key, setting.value]));
+  const map = buildSettingsMap(settings);
   const zh = locale === "zh";
   const banner = banners[0];
   const formSection = section.form;
   const information = section.information;
+  const phone = map.phone ?? undefined;
+  const email = map.email ?? undefined;
+  const companyNameZh = map.company_name_zh ?? undefined;
+  const companyName = map.company_name ?? undefined;
+  const addressZh = map.address_zh ?? undefined;
+  const address = map.address ?? undefined;
+  const mapsEmbed = map.google_maps_embed_url ?? undefined;
+  const mapsDirections = map.google_maps_directions_url ?? undefined;
   const defaultInfo = zh ? [
     { title: "电话 / WhatsApp", value: map.phone || "+86 755 8888 9999", text: "周一至周六，8:30–18:00", image: "" },
     { title: "电子邮箱", value: map.email || "sales@shanzesz.com", text: "24 小时内回复", image: "" },
@@ -53,11 +61,11 @@ export default async function ContactPage() {
   ];
   const infoItems = information?.parsedItems.length ? information.parsedItems : defaultInfo;
   const icons = [Phone, Mail, MapPin, Clock];
-  const address = (zh ? map.address_zh : map.address) || map.address || "Building A, No.168 Industrial Road, Shenzhen, Guangdong, China";
-  const configuredEmbedUrl = safeGoogleUrl(map.google_maps_embed_url, true);
-  const configuredDirectionsUrl = safeGoogleUrl(map.google_maps_directions_url);
-  const mapEmbedUrl = configuredEmbedUrl || `https://www.google.com/maps?q=${encodeURIComponent(address)}&output=embed`;
-  const directionsUrl = configuredDirectionsUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+  const displayAddress = (zh ? addressZh : address) || address || "Building A, No.168 Industrial Road, Shenzhen, Guangdong, China";
+  const configuredEmbedUrl = safeGoogleUrl(mapsEmbed, true);
+  const configuredDirectionsUrl = safeGoogleUrl(mapsDirections);
+  const mapEmbedUrl = configuredEmbedUrl || `https://www.google.com/maps?q=${encodeURIComponent(displayAddress)}&output=embed`;
+  const directionsUrl = configuredDirectionsUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(displayAddress)}`;
   return <>
     <Hero page="contact" image={banner?.image} title={banner?.title || (zh ? "联系我们" : "Contact Us")} accent={banner?.subtitle || (zh ? "我们竭诚助力您的业务" : "We're Here to Power Your Business")} subtitle={banner?.description || (zh ? "如需充电产品或定制方案，请提交需求，我们将在一个工作日内回复。" : "Have questions about our charging products or need a tailored solution? Fill out the form and our team will get back to you within 24 hours.")} ctaLabel={banner?.ctaLabel || (zh ? "提交询盘" : "Send Inquiry")} ctaHref={banner?.ctaHref || "#quote"} slides={banners.map((item) => ({ id: item.id, image: item.image, title: item.title, accent: item.subtitle, subtitle: item.description || "", ctaLabel: item.ctaLabel || (zh ? "提交询盘" : "Send Inquiry"), ctaHref: item.ctaHref || "#quote" }))} />
     <section className="section"><div className="container-site contact-grid" id="quote">

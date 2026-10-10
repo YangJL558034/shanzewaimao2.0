@@ -6,6 +6,7 @@ import { requireApiUser } from "@/lib/auth";
 import { verifyCsrf } from "@/lib/security";
 import { getMediaUsageMap } from "@/lib/media-usage";
 import { queuePublicationNotification } from "@/lib/newsletter";
+import { purgeContentCache } from "@/lib/cache";
 
 function model(name: string) {
   return (db as unknown as Record<string, { findUnique: Function; update: Function; delete: Function }>)[name];
@@ -46,6 +47,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ sect
       },
     );
     await db.auditLog.create({ data: { userId: auth.user.id, action: "UPDATE", entityType: section.model, entityId: id, beforeJson: JSON.stringify(before), afterJson: JSON.stringify(updated) } });
+    // Purge Nginx cache so frontend shows new data immediately
+    purgeContentCache(section.key).catch(() => {});
     const beforeRecord = before as Record<string, unknown>;
     const updatedRecord = updated as Record<string, unknown>;
     const notification = (section.key === "products" || section.key === "news") && beforeRecord.status !== "PUBLISHED" && updatedRecord.status === "PUBLISHED"
@@ -94,5 +97,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ s
     await (tx as unknown as Record<string, { delete: Function }>)[section.model].delete({ where: { id } });
     await tx.auditLog.create({ data: { userId: auth.user.id, action: "DELETE", entityType: section.model, entityId: id, beforeJson: JSON.stringify(before) } });
   });
+  // Purge Nginx cache so frontend shows updated data immediately
+  purgeContentCache(section.key).catch(() => {});
   return NextResponse.json({ ok: true });
 }

@@ -9,8 +9,14 @@ import { getSeoMetadata } from "@/lib/seo";
 import { getLocale, translateEntities } from "@/lib/i18n";
 import { getPageSectionMap } from "@/lib/page-content";
 
-export const revalidate = 60;
-export async function generateMetadata() { return getSeoMetadata("/", { title: "Power Bank Manufacturer in China | OEM/ODM Charging Solutions | Shanze", description: "Shanze is a professional power bank and wireless charger manufacturer in China, providing OEM/ODM magnetic power banks, semi-solid-state power banks and custom charging solutions for global brands." }); }
+export const dynamic = "force-dynamic";
+export async function generateMetadata() {
+  const [seo, company] = await Promise.all([
+    getSeoMetadata("/", { title: "Power Bank Manufacturer in China | OEM/ODM Charging Solutions | Shanze", description: "Shanze is a professional power bank and wireless charger manufacturer in China, providing OEM/ODM magnetic power banks, semi-solid-state power banks and custom charging solutions for global brands." }),
+    db.setting.findUnique({ where: { key: "company_name" } }).catch(() => null),
+  ]);
+  return company?.value ? { ...seo, title: { absolute: company.value } } : seo;
+}
 
 export default async function HomePage() {
   const locale = await getLocale();

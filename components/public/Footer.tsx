@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { getLocale, translateEntity } from "@/lib/i18n";
 import { DismissibleCta } from "@/components/public/DismissibleCta";
 import { NewsletterForm } from "@/components/public/NewsletterForm";
+import { buildSettingsMap } from "@/lib/page-content";
 
 export async function Footer() {
   const [settings, locale, products, footerNavigation] = await Promise.all([
@@ -18,7 +19,7 @@ export async function Footer() {
       .catch(() => []),
     db.navigationItem.findMany({ where: { location: "FOOTER", isVisible: true }, orderBy: { sortOrder: "asc" } }).catch(() => []),
   ]);
-  const map = Object.fromEntries(settings.map((setting) => [setting.key, setting.value]));
+  const map = buildSettingsMap(settings);
   const [localizedProducts, localizedFooterNavigation] = await Promise.all([
     Promise.all(products.map((product) => translateEntity("Product", product, ["name"], locale))),
     Promise.all(footerNavigation.map((item) => translateEntity("NavigationItem", item, ["label"], locale))),

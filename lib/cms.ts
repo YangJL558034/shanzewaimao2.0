@@ -149,10 +149,20 @@ export function coerceCmsData(section: CmsSection, input: Record<string, unknown
     else if (field.type === "json") {
       const parsed = typeof value === "string" ? JSON.parse(value || "{}") : value;
       output[field.key] = JSON.stringify(parsed);
-    } else output[field.key] = typeof value === "string" ? value.trim() : value;
+    } else if (field.key === "slug") output[field.key] = sanitizeSlug(typeof value === "string" ? value : "");
+    else output[field.key] = typeof value === "string" ? value.trim() : value;
   }
   if (section.key === "products" || section.key === "news" || section.key === "pages") {
     if (output.status === "PUBLISHED" && !output.publishedAt) output.publishedAt = new Date();
   }
   return output;
+}
+
+export function sanitizeSlug(input: string): string {
+  let slug = input.toLowerCase().trim();
+  slug = slug.replace(/[^\w\s-]/g, "-");
+  slug = slug.replace(/[\s_]+/g, "-");
+  slug = slug.replace(/-+/g, "-");
+  slug = slug.replace(/^-+|-+$/g, "");
+  return slug;
 }

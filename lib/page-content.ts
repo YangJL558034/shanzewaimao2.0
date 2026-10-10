@@ -10,6 +10,20 @@ export type PageContentItem = {
   href?: string;
 };
 
+/**
+ * Build a settings map from a list of settings.
+ * Strips the group prefix from keys (e.g., "contact/email" → "email")
+ * so that frontend code can access settings without knowing the group.
+ */
+export function buildSettingsMap(settings: Array<{ key: string; value: string | null }>) {
+  return Object.fromEntries(
+    settings.map((s) => {
+      const key = s.key.includes("/") ? s.key.split("/").pop()! : s.key;
+      return [key, s.value];
+    }),
+  );
+}
+
 export function parsePageItems(value: unknown, fallback: PageContentItem[] = []): PageContentItem[] {
   try {
     const parsed = typeof value === "string" ? JSON.parse(value) : value;

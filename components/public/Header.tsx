@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { HeaderClient } from "@/components/public/HeaderClient";
 import { getLocale, translateEntity } from "@/lib/i18n";
+import { buildSettingsMap } from "@/lib/page-content";
 
 export async function Header() {
   const [items, locales, locale, settings] = await Promise.all([
@@ -16,9 +17,7 @@ export async function Header() {
     getLocale(),
     db.setting.findMany({ where: { isPublic: true } }).catch(() => []),
   ]);
-  const settingMap = Object.fromEntries(
-    settings.map((setting) => [setting.key, setting.value]),
-  );
+  const settingMap = buildSettingsMap(settings);
   const localizedItems = await Promise.all(
     items.map((item) =>
       translateEntity("NavigationItem", item, ["label"], locale),

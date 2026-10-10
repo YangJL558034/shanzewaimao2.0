@@ -13,7 +13,7 @@ export async function generateMetadata(): Promise<Metadata> {
     where: { key: { in: ["company_name", "site_name", "company_description"] } },
   }).catch(() => []);
   const map = Object.fromEntries(settings.map((setting) => [setting.key, setting.value]));
-  const companyName = map.company_name || "Shanze New Energy Technology Co., Ltd.";
+  const companyName = map.company_name || map.site_name || "Shanze New Energy Technology Co., Ltd.";
   const description = map.company_description || "Certified OEM/ODM manufacturer of charging products for global B2B buyers.";
   const defaultSocialImage = absoluteUrl("/references/home.png");
   const googleVerification = process.env.GOOGLE_SITE_VERIFICATION?.trim();

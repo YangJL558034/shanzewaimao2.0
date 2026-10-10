@@ -8,6 +8,7 @@ import { getMediaUsageMap, usageFromMap } from "@/lib/media-usage";
 import { ensureNewsletterTemplates, queuePublicationNotification } from "@/lib/newsletter";
 import { pruneOperationalLogs } from "@/lib/log-retention";
 import { prepareAuditRow } from "@/lib/audit-display";
+import { purgeContentCache } from "@/lib/cache";
 
 function model(name: string) {
   return (db as unknown as Record<string, { findMany: Function; create: Function }>)[name];
@@ -119,6 +120,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ sec
     }
     await saveInlineTranslations(section, String(created.id), input._translations);
     await db.auditLog.create({ data: { userId: auth.user.id, action: "CREATE", entityType: section.model, entityId: created.id, afterJson: JSON.stringify(created) } });
+    // Purge Nginx cache so frontend shows new data immediately
+    purgeContentCache(section.key).catch(() => {});
     const createdRecord = created as Record<string, unknown>;
     const notification = (section.key === "products" || section.key === "news") && createdRecord.status === "PUBLISHED"
       ? await queuePublicationNotification(section.key === "news" ? "news" : "product", String(createdRecord.id), request)

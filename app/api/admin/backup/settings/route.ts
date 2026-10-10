@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireApiUser } from "@/lib/auth";
 import { verifyCsrf } from "@/lib/security";
+import { buildSettingsMap } from "@/lib/page-content";
 
 const schema = z.object({
   enabled: z.boolean(),
@@ -19,7 +20,7 @@ export async function GET() {
       },
     },
   });
-  const map = Object.fromEntries(settings.map((setting) => [setting.key, setting.value]));
+  const map = buildSettingsMap(settings);
   return NextResponse.json({
     data: {
       enabled: map.backup_enabled !== "false",

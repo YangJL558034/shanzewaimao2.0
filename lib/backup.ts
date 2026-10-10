@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
 import path from "node:path";
 import { db } from "@/lib/db";
+import { buildSettingsMap } from "@/lib/page-content";
 
 const BACKUP_LIMIT = 5;
 export const MAX_BACKUP_UPLOAD_BYTES = 256 * 1024 * 1024;
@@ -121,7 +122,7 @@ export async function runScheduledBackupIfDue() {
       },
     },
   });
-  const map = Object.fromEntries(settings.map((setting) => [setting.key, setting.value]));
+  const map = buildSettingsMap(settings);
   if (map.backup_enabled === "false") return { status: "disabled" as const };
   const intervalHours = Math.max(1, Math.min(168, Number(map.backup_interval_hours) || 24));
   const lastRun = map.backup_last_run ? new Date(map.backup_last_run).getTime() : 0;
