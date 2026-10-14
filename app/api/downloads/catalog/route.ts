@@ -86,7 +86,7 @@ export async function GET() {
   return new Response(new Uint8Array(pdf), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": 'attachment; filename="enercore-product-catalog.pdf"',
+      "Content-Disposition": 'attachment; filename="shanze-product-catalog.pdf"',
       "Cache-Control": "private, no-store",
       "X-Content-Type-Options": "nosniff",
     },

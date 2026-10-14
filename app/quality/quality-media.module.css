@@ -1,0 +1,14 @@
+.galleryMedia {
+  position: relative;
+  display: grid;
+  width: 100%;
+  place-items: center;
+  overflow: hidden;
+  background-image: none;
+  color: #0861df;
+}
+
+.galleryMedia img {
+  object-fit: contain;
+  object-position: center;
+}

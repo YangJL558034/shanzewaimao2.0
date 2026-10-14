@@ -24,9 +24,9 @@ export function absoluteUrl(path = "") {
   if (configured) {
     try {
       const candidate = new URL(configured);
-      const localHost = ["localhost", "127.0.0.1", "0.0.0.0"].includes(candidate.hostname);
-      // Never publish development URLs in production SEO metadata or email links.
-      if (process.env.NODE_ENV !== "production" || !localHost) base = candidate.origin;
+      const localHost = /^(localhost$|127\.|0\.0\.0\.0$|10\.|169\.254\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|\[?::1\]?$)/i.test(candidate.hostname) || /\.(localhost|local|internal)$/i.test(candidate.hostname) || !candidate.hostname.includes(".");
+      // Canonicals, structured data and email links must never point at a development server.
+      if (candidate.protocol === "https:" && !localHost) base = candidate.origin;
     } catch {
       base = productionOrigin;
     }

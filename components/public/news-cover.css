@@ -1,0 +1,50 @@
+.news-cover {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  margin: 0;
+  overflow: hidden;
+  background: #edf3fa;
+}
+
+.news-cover > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Keep the existing news card's 190px media box and the existing column layout. */
+.news-card .news-cover {
+  height: 190px;
+  aspect-ratio: auto;
+}
+
+.news-cover-placeholder {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  background: linear-gradient(135deg, #edf4fd, #e2ecf8);
+  color: #7895b5;
+}
+
+.news-cover.news-article-cover {
+  margin: 32px 0;
+  border-radius: 12px;
+}
+
+.blog-article-main > .news-cover {
+  margin-bottom: 34px;
+  border-radius: 12px;
+}
+
+.blog-article-main > .news-cover:has(img) {
+  aspect-ratio: auto;
+}
+
+.blog-article-main > .news-cover > img {
+  height: auto;
+}

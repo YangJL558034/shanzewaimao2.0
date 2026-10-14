@@ -1,64 +1,22 @@
 import Link from "next/link";
-import {
-  ArchiveRestore,
-  Boxes,
-  Factory,
-  FileText,
-  Gauge,
-  Globe2,
-  Image,
-  Languages,
-  LayoutDashboard,
-  Mail,
-  MessageSquareText,
-  Newspaper,
-  PanelTop,
-  Settings,
-  ShieldCheck,
-  Tags,
-  Users,
-} from "lucide-react";
+import { ChevronRight, ExternalLink, ShieldCheck } from "lucide-react";
 import { cmsSections } from "@/lib/cms";
 import { LogoutButton } from "@/components/admin/LogoutButton";
 import { AdminTopbarTools } from "@/components/admin/AdminTopbarTools";
-import { AdminSidebarState } from "@/components/admin/AdminSidebarState";
+import { AdminNavigation, type AdminNavGroup, type AdminNavItem } from "@/components/admin/AdminNavigation";
+import { AdminSidebarFrame, AdminSidebarState, AdminSidebarToggle } from "@/components/admin/AdminSidebarState";
 import { AdminWelcomeToast } from "@/components/admin/AdminWelcomeToast";
+import { SupportNotificationsProvider } from "@/components/admin/SupportNotifications";
 
-const icons: Record<string, typeof Boxes> = {
-  products: Boxes,
-  categories: Tags,
-  downloads: FileText,
-  news: Newspaper,
-  "news-categories": Tags,
-  pages: FileText,
-  "page-sections": PanelTop,
-  equipment: Factory,
-  workshops: Factory,
-  certificates: ShieldCheck,
-  banners: PanelTop,
-  seo: Globe2,
-  navigation: PanelTop,
-  settings: Settings,
-  locales: Languages,
-  translations: Languages,
-  inquiries: MessageSquareText,
-  "newsletter-subscribers": Mail,
-  "email-templates": Mail,
-  "email-queue": Mail,
-  "website-visits": Globe2,
-  audit: FileText,
-  "login-logs": ShieldCheck,
-  trash: ArchiveRestore,
-  backups: ArchiveRestore,
-  media: Image,
-};
+import "./admin-shell.css";
+import "./support-notifications.css";
 
-const groups = [
-  { label: "工作台", keys: [] },
-  { label: "内容与营销", keys: ["products", "categories", "downloads", "news", "news-categories", "pages", "navigation", "seo"] },
-  { label: "制造与质量", keys: ["equipment", "workshops", "certificates"] },
-  { label: "客户与邮件", keys: ["inquiries", "newsletter-subscribers", "email-templates", "email-queue", "website-visits"] },
-  { label: "系统安全中心", keys: ["media", "locales", "translations", "settings", "audit", "login-logs", "trash", "backups"] },
+const navigationGroups = [
+  { id: "content", label: "网站内容", icon: "content", keys: ["news", "news-categories", "pages", "page-sections", "banners", "navigation", "seo", "media"] },
+  { id: "products", label: "产品与制造", icon: "products", keys: ["products", "categories", "downloads", "equipment", "workshops", "certificates"] },
+  { id: "customers", label: "客户与沟通", icon: "customers", keys: ["inquiries", "newsletter-subscribers", "email-templates", "email-queue", "website-visits"] },
+  { id: "safety", label: "安全与数据", icon: "security", keys: ["audit", "login-logs", "backups", "trash"] },
+  { id: "settings", label: "系统设置", icon: "settings", keys: ["settings", "locales", "translations"] },
 ];
 
 export function AdminShell({
@@ -66,61 +24,64 @@ export function AdminShell({
   title,
   children,
 }: {
-  user: { name: string; email: string; permissions: Set<string> };
+  user: { name: string; email: string; permissions: Set<string>; roles?: { role: { name: string } }[] };
   title: string;
   children: React.ReactNode;
 }) {
   const can = (permission: string) =>
     user.permissions.has("*") || user.permissions.has(`${permission}.read`);
+  const primary: AdminNavItem[] = [{ href: "/admin", label: "工作台", description: "概览与工作提醒", icon: "dashboard" }];
+  if (can("inquiries")) primary.push({ href: "/admin/inbox", label: "客服中心", description: "客户消息与在线回复", icon: "inbox" });
+  if (can("pages")) primary.push({ href: "/admin/content", label: "页面管理", description: "编辑官网页面内容", icon: "content" });
+  const groups: AdminNavGroup[] = navigationGroups.map((group) => {
+    const items: AdminNavItem[] = group.keys.flatMap((key) => {
+      const section = cmsSections.find((item) => item.key === key);
+      return section && can(section.permission) ? [{ href: `/admin/${key}`, label: section.label, description: section.description, icon: key }] : [];
+    });
+    if (group.id === "customers" && can("settings")) items.push({ href: "/admin/customer-channels", label: "客服渠道配置", description: "聊天入口与销售通知设置", icon: "inbox" });
+    if (group.id === "content" && can("seo")) items.push({ href: "/admin/seo-tools", label: "Google 与 SEO 配置", description: "GA4、Search Console 与站点地图", icon: "seo" });
+    if (group.id === "safety" && can("security")) items.unshift(
+      { href: "/admin/system", label: "安全中心", description: "病毒检测、文件安全与防护状态", icon: "security" },
+      { href: "/admin/security", label: "用户与权限", description: "管理员账号、角色和访问权限", icon: "customers" },
+    );
+    if (group.id === "settings" && can("settings")) items.push({ href: "/admin/smtp", label: "邮件服务器", description: "配置 SMTP 发信账号", icon: "email" });
+    return { id: group.id, label: group.label, icon: group.icon, items };
+  }).filter((group) => group.items.length > 0);
+  const searchItems = [...primary, ...groups.flatMap((group) => group.items)];
+  const roleLabel = user.roles?.map(({ role }) => role.name).join(" · ") || (user.permissions.has("*") ? "超级管理员" : "后台成员");
   return (
-    <div className="admin-screen">
+    <SupportNotificationsProvider enabled={can("inquiries")}><AdminSidebarState>
       <AdminWelcomeToast fallbackName={user.name} />
-      <div className="admin-shell">
-        <aside className="admin-sidebar">
-          <AdminSidebarState />
-          <Link className="brand" href="/admin">
-            <span className="brand-mark">E</span>
-            <span><span className="brand-name">Shanze</span><span className="brand-tag">MANUFACTURING CMS</span></span>
+      <AdminSidebarFrame>
+        <div className="admin-sidebar-brand-row">
+          <Link className="brand" href="/admin" aria-label="Shanze 管理工作台">
+            <span className="brand-mark">S</span>
+            <span className="admin-brand-copy"><span className="brand-name">Shanze</span><span className="brand-tag">管理工作台</span></span>
           </Link>
-          <div className="admin-user"><strong>{user.name}</strong><span>{user.email}</span></div>
-          <nav className="admin-nav">
-            {groups.map((group) => (
-              <div className="contents" key={group.label}>
-                <div className="admin-nav-label">{group.label}</div>
-                {group.label === "工作台" && <>
-                  <Link href="/admin"><LayoutDashboard size={16} /><span>控制台</span></Link>
-                  {can("pages") && <Link href="/admin/content"><PanelTop size={16} /><span>前台页面管理</span></Link>}
-                </>}
-                {group.keys.map((key) => {
-                  const section = cmsSections.find((item) => item.key === key)!;
-                  if (!can(section.permission)) return null;
-                  const Icon = icons[key] || Gauge;
-                  return <Link href={`/admin/${key}`} key={key}><Icon size={16} /><span>{section.label}</span></Link>;
-                })}
-                {group.label === "系统安全中心" && can("security") && <Link href="/admin/security"><Users size={16} /><span>用户与权限</span></Link>}
-                {group.label === "系统安全中心" && can("settings") && <Link href="/admin/smtp"><Mail size={16} /><span>邮件服务器</span></Link>}
-                {group.label === "系统安全中心" && can("settings") && <Link href="/admin/system"><Gauge size={16} /><span>系统状态</span></Link>}
-              </div>
-            ))}
-          </nav>
-        </aside>
+          <AdminSidebarToggle closeOnly />
+        </div>
+        <AdminNavigation primary={primary} groups={groups} />
+        <div className="admin-sidebar-footer">
+          <span className="admin-sidebar-avatar">{user.name.slice(0, 1).toUpperCase()}</span>
+          <div><strong>{user.name}</strong><span title={user.email}>{user.email}</span></div>
+          <ShieldCheck size={16} aria-hidden="true" />
+        </div>
+      </AdminSidebarFrame>
         <div className="admin-main">
           <header className="admin-topbar">
-            <h1>首页　/　{title}</h1>
-            <AdminTopbarTools />
+            <div className="admin-topbar-leading"><AdminSidebarToggle /><div className="admin-breadcrumb"><Link href="/admin">工作台</Link><ChevronRight size={14} aria-hidden="true" /><h1>{title}</h1></div></div>
+            <AdminTopbarTools items={searchItems} />
             <div className="admin-top-actions">
-              <Link href="/" target="_blank">网站首页</Link>
-              <span>中文</span>
+              <Link className="admin-public-link" href="/" target="_blank" rel="noopener noreferrer"><ExternalLink size={14} /><span>查看官网</span></Link>
               <div className="admin-profile">
                 <span className="admin-avatar">{user.name.slice(0, 1).toUpperCase()}</span>
-                <span><strong className="block">{user.name}</strong><small className="text-slate-400">超级管理员</small></span>
+                <span className="admin-profile-copy"><strong>{user.name}</strong><small>{roleLabel}</small></span>
               </div>
               <LogoutButton />
             </div>
           </header>
-          <div className="admin-content">{children}</div>
+          <div className="admin-content" id="admin-content">{children}</div>
         </div>
-      </div>
-    </div>
+    </AdminSidebarState></SupportNotificationsProvider>
   );
 }

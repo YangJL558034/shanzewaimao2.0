@@ -3,6 +3,8 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Factory, Globe2, PackageCheck, ShieldCheck } from "lucide-react";
 import { getVideoEmbedProvider, getVideoEmbedUrl, visualMediaKind } from "@/lib/media-url";
+import { SeoImage } from "./SeoImage";
+import "./hero-image-seo.css";
 
 export type HeroSlide = { id: string; image?: string | null; title: string; accent?: string | null; subtitle: string; ctaLabel: string; ctaHref: string };
 
@@ -21,12 +23,12 @@ export function Hero({ page, title, accent, subtitle, image, ctaLabel = "Learn M
   const activeIsVideo = mediaKind === "video" || mediaKind === "embed";
   const move = (delta: number) => setActive((current) => (current + delta + slideList.length) % slideList.length);
   return <section className={`page-hero ${activeIsVideo ? "has-video" : ""}`}>
-    <div className="hero-carousel-media" aria-hidden="true">
+    <div className="hero-carousel-media">
       {slideList.map((item, index) => {
         const kind = visualMediaKind(item.image);
         if (kind === "video" || kind === "embed") return null;
         const source = kind === "image" ? item.image : `/references/${page}.png`;
-        return <div key={item.id} className={`hero-image-layer ${index === active ? "is-active" : ""}`} style={{ backgroundImage: `url(${source})` }} />;
+        return <div key={item.id} className={`hero-image-layer ${index === active ? "is-active" : ""}`}><SeoImage className="hero-seo-image" src={source || undefined} fill priority={index === 0} loading={index === 0 ? "eager" : "lazy"} sizes="100vw" /></div>;
       })}
       {mediaKind === "video" && <div className="hero-media-layer"><video key={slide.id} src={slide.image || undefined} autoPlay muted loop playsInline preload="metadata" controls={false} controlsList="nodownload nofullscreen noplaybackrate" disablePictureInPicture /></div>}
       {mediaKind === "embed" && <div className={`hero-media-layer hero-media-embed hero-media-${embedProvider}`}><iframe key={slide.id} src={getVideoEmbedUrl(slide.image || "", true) || undefined} title="" tabIndex={-1} loading="eager" allow="autoplay; encrypted-media" referrerPolicy="strict-origin-when-cross-origin" /></div>}

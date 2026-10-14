@@ -1,0 +1,11 @@
+/* The original hero layer, overlay, dimensions and animation remain unchanged. */
+.hero-image-layer > .hero-seo-image {
+  object-fit: cover;
+  object-position: center;
+}
+
+@media (max-width: 760px) {
+  .hero-image-layer > .hero-seo-image {
+    object-position: center bottom;
+  }
+}

@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { SeoImage } from "@/components/public/SeoImage";
 
 type PartnerItem = {
   title?: string;
@@ -20,7 +21,7 @@ function PartnerCard({ item, duplicate = false }: { item: PartnerItem; duplicate
   const content = <>
     <span className="partner-logo">
       {item.image
-        ? <img src={item.image} alt={`${item.title || "Partner"} logo`} loading="lazy" />
+        ? <SeoImage src={item.image} alt={`${item.title || "Partner"} logo`} loading="lazy" sizes="80px" />
         : <span aria-hidden="true">{(item.title || "P").slice(0, 2).toUpperCase()}</span>}
     </span>
     <span className="partner-copy">

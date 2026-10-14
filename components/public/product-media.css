@@ -1,0 +1,12 @@
+.card-art.product-media-placeholder,.product-gallery-main.product-media-placeholder {
+  display: grid;
+  place-items: center;
+  background-image: none;
+  background-color: #f2f6fc;
+  color: #9bb1cb;
+}
+
+.category-card .next-image-art img,.product-card-media .next-image-art img {
+  object-fit: contain;
+  object-position: center;
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { SeoImage } from "@/components/public/SeoImage";
 import { usePathname } from "next/navigation";
 import { Menu, PackageCheck, X } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -43,7 +44,7 @@ export function HeaderClient({
       <div className="container-site header-inner">
         <Link href="/" className="brand header-brand" aria-label={`${brand.name} home`}>
           {brand.logoUrl ? (
-            <img className="brand-logo-image" src={brand.logoUrl} alt={brand.name} />
+            <SeoImage className="brand-logo-image" src={brand.logoUrl} alt={brand.name} loading="eager" sizes="48px" />
           ) : (
             <span className="brand-mark">{brand.name.slice(0, 1)}</span>
           )}

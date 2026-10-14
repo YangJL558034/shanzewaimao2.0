@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  devIndicators: false,
+  // Keep canonical and Search Console verification tags in the initial <head> for all validators.
+  htmlLimitedBots: /.*/,
   async redirects() {
     return [
       {

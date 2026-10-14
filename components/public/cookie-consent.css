@@ -1,0 +1,58 @@
+/* Keep consent controls above the independently movable customer-support widget. */
+body .cookie-consent.shanze-cookie-consent {
+  z-index: 1000;
+  max-width: 1180px;
+  margin-inline: auto;
+  bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  max-height: calc(100dvh - 36px);
+  overflow: auto;
+  pointer-events: auto;
+  background: #fff;
+}
+
+.shanze-cookie-consent .cookie-consent-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.shanze-cookie-consent .cookie-consent-copy strong {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.shanze-cookie-consent .cookie-consent-copy .text-link {
+  display: inline-block;
+  margin-top: 5px;
+  font-size: 12px;
+}
+
+.shanze-cookie-consent .cookie-consent-actions .btn {
+  min-height: 40px;
+  padding: 9px 13px;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+@media (max-width: 700px) {
+  body .cookie-consent.shanze-cookie-consent {
+    left: 10px;
+    right: 10px;
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    max-height: calc(100dvh - 20px);
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .shanze-cookie-consent .cookie-consent-actions {
+    display: flex;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .shanze-cookie-consent .cookie-consent-actions .btn {
+    flex: 1;
+    min-width: 0;
+    min-height: 42px;
+    padding-inline: 10px;
+  }
+}

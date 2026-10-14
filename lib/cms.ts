@@ -1,3 +1,5 @@
+import { certificateCategoryOptions, isCertificateCategory } from "@/lib/certificate-categories";
+
 export type CmsField = {
   key: string;
   label: string;
@@ -47,13 +49,13 @@ export const cmsSections: CmsSection[] = [
   { key: "downloads", label: "下载资料", singular: "下载资料", model: "productDownload", permission: "products", description: "产品规格书、认证文件和宣传资料", listFields: ["title", "fileType", "fileSize", "fileUrl"], fields: [
     { key: "productId", label: "关联产品", type: "select", relation: "products", required: true }, { key: "title", label: "资料名称", required: true, translatable: true }, { key: "fileUrl", label: "资料文件", type: "file", required: true }, { key: "fileType", label: "文件类型" }, { key: "fileSize", label: "显示大小" },
   ]},
-  { key: "news", label: "新闻管理", singular: "新闻", model: "news", permission: "news", description: "新闻、洞察、展会和公司动态", listFields: ["title", "status", "isFeatured", "publishedAt"], fields: [
+  { key: "news", label: "博客与新闻", singular: "文章", model: "news", permission: "news", description: "行业博客与公司新闻统一管理；行业分类文章发布到 /blog，其余发布到 /news", listFields: ["title", "status", "isFeatured", "publishedAt"], fields: [
     { key: "title", label: "标题", required: true, translatable: true }, { key: "slug", label: "Slug", required: true }, { key: "categoryId", label: "新闻分类", type: "select", relation: "news-categories", required: true },
-    { key: "excerpt", label: "摘要", type: "textarea", required: true, translatable: true }, { key: "content", label: "正文", type: "textarea", required: true, translatable: true }, { key: "coverImage", label: "新闻封面图片", type: "media" },
+    { key: "excerpt", label: "摘要", type: "textarea", required: true, translatable: true }, { key: "content", label: "正文", type: "textarea", required: true, translatable: true, help: "博客正文支持 ## 二级标题、### 三级标题、- 列表和 [文字](/站内地址)；页面会自动生成 H1，请勿在正文重复添加。" }, { key: "coverImage", label: "文章封面图片", type: "media" },
     { key: "author", label: "作者" }, { key: "isFeatured", label: "设为头条", type: "boolean" }, { key: "status", label: "状态", type: "select", options: statusOptions }, { key: "publishedAt", label: "发布时间", type: "date" },
     { key: "seoTitle", label: "SEO Title（留空自动生成）" }, { key: "metaDescription", label: "Meta Description（留空自动生成）", type: "textarea" }, { key: "canonical", label: "Canonical（留空使用正式文章网址）" }, { key: "ogTitle", label: "OG Title（留空使用 SEO Title）" }, { key: "ogDescription", label: "OG Description（留空使用 Meta Description）", type: "textarea" }, { key: "ogImage", label: "OG Image（留空使用新闻封面）", type: "media" }, { key: "noIndex", label: "禁止搜索引擎收录", type: "boolean" },
   ]},
-  { key: "news-categories", label: "新闻分类", singular: "新闻分类", model: "newsCategory", permission: "news", description: "新闻栏目与排序", listFields: ["name", "slug", "sortOrder"], fields: [
+  { key: "news-categories", label: "文章分类", singular: "文章分类", model: "newsCategory", permission: "news", description: "行业博客分类使用 industry-insights、industry-guides、oem-guides、buying-guides；其余为新闻分类", listFields: ["name", "slug", "sortOrder"], fields: [
     { key: "name", label: "名称", required: true, translatable: true }, { key: "slug", label: "Slug", required: true }, { key: "sortOrder", label: "排序", type: "number" },
   ]},
   { key: "pages", label: "独立页面与政策", singular: "页面", model: "page", permission: "pages", description: "编辑隐私政策、使用条款及其他可发布的独立页面，中英文均可维护", listFields: ["title", "slug", "status", "updatedAt"], fields: [
@@ -72,7 +74,8 @@ export const cmsSections: CmsSection[] = [
   { key: "workshops", label: "车间环境六项", singular: "车间项目", model: "workshop", permission: "factory", description: "逐项修改生产线、标准着装员工、质检区、包装区、仓库和物流装运区的名称、说明及图片", listFields: ["image", "name", "sortOrder", "isVisible", "updatedAt"], fields: [
     { key: "name", label: "前台显示名称", required: true, translatable: true }, { key: "description", label: "图片下方说明", type: "textarea", translatable: true }, { key: "image", label: "该项目的车间图片", type: "media", help: "推荐横向图片 1600×900 或 1200×675；保存后工厂实力和品质保障页面会立即使用。" }, { key: "sortOrder", label: "显示顺序", type: "number" }, { key: "isVisible", label: "前台显示", type: "boolean" },
   ]},
-  { key: "certificates", label: "认证资质与证书照片", singular: "证书", model: "certificate", permission: "quality", description: "逐张上传完整证书照片、填写认证资料并控制前台展示", listFields: ["image", "name", "issuer", "certificateNo", "isVisible"], fields: [
+  { key: "certificates", label: "认证资质与证书照片", singular: "证书", model: "certificate", permission: "quality", description: "按管理体系与产品认证分类维护，新增文件保存后自动加入前台对应轮播", listFields: ["image", "name", "category", "issuer", "certificateNo", "isVisible"], fields: [
+    { key: "category", label: "资料分类", type: "select", required: true, options: certificateCategoryOptions, help: "管理体系用于 ISO、IATF 等体系文件；产品认证与报告用于 CE、FCC、RoHS、PSE 等产品资料。分类决定前台展示分组。" },
     { key: "name", label: "认证名称", required: true, translatable: true }, { key: "issuer", label: "签发机构", translatable: true }, { key: "certificateNo", label: "证书编号" }, { key: "image", label: "完整证书照片", type: "media", help: "请上传完整、清晰、四周不裁切的证书照片；推荐竖版 1200×1697（A4 比例），PNG、JPG 或 WebP。" }, { key: "fileUrl", label: "可下载的证书原文件（可选）", type: "file", help: "可上传 PDF 原件，客户点击前台证书时可查看或下载。" }, { key: "expiresAt", label: "到期日", type: "date" }, { key: "sortOrder", label: "显示顺序", type: "number" }, { key: "isVisible", label: "前台显示", type: "boolean" },
   ]},
   { key: "banners", label: "各页面首屏轮播", singular: "轮播内容", model: "banner", permission: "pages", description: "首页、关于我们、产品中心、工厂实力、品质保障、新闻资讯和联系我们均可添加多张背景图片或视频组成轮播", listFields: ["title", "page", "status", "sortOrder"], fields: [
@@ -138,6 +141,9 @@ export function translationEntityType(model: string) {
 }
 
 export function coerceCmsData(section: CmsSection, input: Record<string, unknown>) {
+  if (section.key === "certificates" && "category" in input && !isCertificateCategory(input.category)) {
+    throw new Error("请选择有效的资料分类：管理体系或产品认证与报告。");
+  }
   const output: Record<string, unknown> = {};
   for (const field of section.fields) {
     if (field.virtual) continue;

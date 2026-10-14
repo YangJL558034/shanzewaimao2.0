@@ -29,6 +29,8 @@ import {
   Upload,
 } from "lucide-react";
 import type { CmsField, CmsSection } from "@/lib/cms";
+import { certificateCategoryOptions } from "@/lib/certificate-categories";
+import "./certificate-admin.css";
 import { getFreshCsrfToken } from "@/lib/csrf-client";
 import { getVideoEmbedUrl, isSupportedVisualMedia, visualMediaKind } from "@/lib/media-url";
 
@@ -42,6 +44,18 @@ type RelationItem = {
   alt?: string | null;
 };
 type AdminPresentation = "table" | "home-banners" | "home-sections" | "page-banners" | "page-sections";
+
+/** Use the record being edited, never the upload's local filename, as its SEO context. */
+function imageUploadContext(element: HTMLElement | null, fallback: string) {
+  const form = element?.closest("form");
+  const value = (name: string) => form?.querySelector<HTMLInputElement | HTMLTextAreaElement>(`[name="${name}"]`)?.value.trim() || "";
+  const section = form?.dataset.imageUploadSection || "";
+  return {
+    context: value("slug") || value("name") || value("title") || value("company_name") || value("site_name") || fallback,
+    alt: value("alt"),
+    preserveDetail: section === "certificates",
+  };
+}
 
 function AdminModalPortal({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false);
@@ -229,6 +243,7 @@ export function AdminManager({ sectionKey, fixedFilter, headingOverride, descrip
     undefined,
   );
   const [query, setQuery] = useState("");
+  const [certificateCategoryFilter, setCertificateCategoryFilter] = useState("");
   const [error, setError] = useState("");
   const [trashPreview, setTrashPreview] = useState<RecordItem | null>(null);
   const [backupImporting, setBackupImporting] = useState(false);
@@ -278,9 +293,10 @@ export function AdminManager({ sectionKey, fixedFilter, headingOverride, descrip
   const filtered = useMemo(
     () =>
       rows.filter((row) =>
-        JSON.stringify(row).toLowerCase().includes(query.toLowerCase()),
+        (JSON.stringify(row).toLowerCase().includes(query.toLowerCase()) || (sectionKey === "certificates" && (certificateCategoryOptions.find((option) => option.value === row.category)?.label || "").includes(query))) &&
+        (sectionKey !== "certificates" || !certificateCategoryFilter || row.category === certificateCategoryFilter),
       ),
-    [rows, query],
+    [rows, query, sectionKey, certificateCategoryFilter],
   );
   async function save(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -451,9 +467,11 @@ export function AdminManager({ sectionKey, fixedFilter, headingOverride, descrip
       for (const [index, file] of files.entries()) {
         setBannerBatchProgress(`${index + 1}/${files.length}`);
         const uploadBody = new FormData();
+        const details = imageUploadContext(bannerModalBatchInputRef.current || bannerBatchInputRef.current, `${page} ${String(template?.title || "banner")}`);
         uploadBody.set("file", file);
-        uploadBody.set("name", file.name);
-        uploadBody.set("alt", file.name.replace(/\.[^.]+$/, ""));
+        uploadBody.set("name", details.context);
+        uploadBody.set("context", details.context);
+        uploadBody.set("alt", details.alt);
         uploadBody.set("folder", `banners/${page}`);
         const uploadToken = await getFreshCsrfToken();
         const uploadResponse = await fetch("/api/admin/upload", {
@@ -689,7 +707,7 @@ export function AdminManager({ sectionKey, fixedFilter, headingOverride, descrip
         />
       )}
       {sectionKey === "backups" && <BackupSchedulePanel csrf={csrf} />}
-      <section className="admin-panel">
+      <section className={`admin-panel${sectionKey === "certificates" ? " certificate-admin-panel" : ""}`}>
         <div className="admin-panel-head">
           <div>
             <h2>
@@ -764,7 +782,7 @@ export function AdminManager({ sectionKey, fixedFilter, headingOverride, descrip
                   ref={bannerBatchInputRef}
                   className="sr-only"
                   type="file"
-                  accept=".jpg,.jpeg,.png,.webp,.mp4,.webm"
+                  accept=".jpg,.jpeg,.png,.webp,.gif,.avif,.mp4,.webm"
                   multiple
                   onChange={(event) => void uploadBannerBatch(Array.from(event.currentTarget.files || []))}
                 />
@@ -783,7 +801,7 @@ export function AdminManager({ sectionKey, fixedFilter, headingOverride, descrip
               <button
                 className="btn btn-primary btn-sm"
                 disabled={Boolean(bannerBatchProgress)}
-                onClick={() => setEditing(null)}
+                onClick={() => setEditing(sectionKey === "certificates" ? { id: "", category: certificateCategoryFilter || "PRODUCT" } : null)}
               >
                 <Plus size={14} />
                 {bannerPresentation
@@ -798,6 +816,12 @@ export function AdminManager({ sectionKey, fixedFilter, headingOverride, descrip
             </button>
           </div>
         </div>
+        {sectionKey === "certificates" && <div className="certificate-admin-filters" role="group" aria-label="资料分类筛选">
+          {[{ label: "全部资料", value: "" }, ...certificateCategoryOptions].map((option) => <button type="button" key={option.value} aria-pressed={certificateCategoryFilter === option.value} onClick={() => setCertificateCategoryFilter(option.value)} className={`certificate-admin-filter${certificateCategoryFilter === option.value ? " is-active" : ""}`}>
+            {option.label}<span>{rows.filter((row) => !option.value || row.category === option.value).length}</span>
+          </button>)}
+          <p>选择分类后添加文件，将自动归入对应的前台资料轮播。</p>
+        </div>}
         {error && <div className="form-status error m-4">{error}</div>}
         {bannerPresentation && (
           <div className="banner-carousel-guide">
@@ -955,7 +979,9 @@ export function AdminManager({ sectionKey, fixedFilter, headingOverride, descrip
                         );
                           return (
                             <td key={field}>
-                          {field === "displayName" && sectionKey === "trash" ? (
+                          {field === "category" && sectionKey === "certificates" ? (
+                            <span className={`certificate-admin-category is-${String(value).toLowerCase()}`}>{certificateCategoryOptions.find((option) => option.value === value)?.label || "未分类"}</span>
+                          ) : field === "displayName" && sectionKey === "trash" ? (
                             <button className="text-link" onClick={() => setTrashPreview(row)}>
                               {display(value)}
                             </button>
@@ -1058,6 +1084,7 @@ export function AdminManager({ sectionKey, fixedFilter, headingOverride, descrip
         <AdminModalPortal><div className="modal-backdrop" role="dialog" aria-modal="true">
           <form
             className="admin-modal"
+            data-image-upload-section={sectionKey}
             onSubmit={sectionKey === "media" ? undefined : save}
           >
             <div className="modal-head">
@@ -1114,7 +1141,7 @@ export function AdminManager({ sectionKey, fixedFilter, headingOverride, descrip
                           ref={bannerModalBatchInputRef}
                           className="sr-only"
                           type="file"
-                          accept=".jpg,.jpeg,.png,.webp,.mp4,.webm"
+                          accept=".jpg,.jpeg,.png,.webp,.gif,.avif,.mp4,.webm"
                           multiple
                           onChange={(event) => void uploadBannerBatch(
                             Array.from(event.currentTarget.files || []),
@@ -1855,6 +1882,7 @@ function MediaGalleryField({
   library: RelationItem[];
   allowVideo?: boolean;
 }) {
+  const fieldRef = useRef<HTMLDivElement>(null);
   const parsed = parseJson(initial, []);
   const [items, setItems] = useState<{ url: string; alt: string }[]>(() =>
     Array.isArray(parsed)
@@ -1876,7 +1904,7 @@ function MediaGalleryField({
     if (!selected?.path || items.some((item) => item.url === selected.path)) return;
     setItems((current) => [
       ...current,
-      { url: selected.path!, alt: selected.alt || selected.name },
+      { url: selected.path!, alt: selected.alt || "" },
     ]);
     setSelectedPath("");
   }
@@ -1895,9 +1923,11 @@ function MediaGalleryField({
     setBusy(true);
     setError("");
     const formData = new FormData();
+    const details = imageUploadContext(fieldRef.current, "Shanze product gallery");
     formData.set("file", file);
-    formData.set("name", file.name);
-    formData.set("alt", file.name.replace(/\.[^.]+$/, ""));
+    formData.set("name", details.context);
+    formData.set("context", details.context);
+    formData.set("alt", details.alt);
     formData.set("folder", "products");
     const token = await getFreshCsrfToken();
     const response = await fetch("/api/admin/upload", {
@@ -1911,7 +1941,7 @@ function MediaGalleryField({
     else
       setItems((current) => [
         ...current,
-        { url: String(data.data.path), alt: String(data.data.alt || file.name) },
+        { url: String(data.data.path), alt: String(data.data.alt || "") },
       ]);
   }
   function move(index: number, direction: -1 | 1) {
@@ -1924,14 +1954,14 @@ function MediaGalleryField({
     });
   }
   return (
-    <div className="cms-gallery-field">
+    <div className="cms-gallery-field" ref={fieldRef}>
       <input type="hidden" name={name} value={JSON.stringify(items)} />
       <div className="cms-gallery-actions">
         <label className="btn btn-primary btn-sm cms-upload-button">
           <Upload size={14} /> {busy ? "上传中…" : allowVideo ? "上传图片或视频" : "上传多张图片"}
           <input
             type="file"
-            accept={allowVideo ? ".jpg,.jpeg,.png,.webp,.mp4,.webm" : ".jpg,.jpeg,.png,.webp"}
+            accept={allowVideo ? ".jpg,.jpeg,.png,.webp,.gif,.avif,.mp4,.webm" : ".jpg,.jpeg,.png,.webp,.gif,.avif"}
             multiple
             disabled={busy}
             onChange={async (event) => {
@@ -1954,6 +1984,7 @@ function MediaGalleryField({
           添加所选媒体
         </button>
       </div>
+      <small className="muted">图片自动转换为 WebP 并生成英文文件名，ALT 可在下方图片说明中编辑；视频保持原格式。</small>
       {allowVideo && <div className="cms-external-media-row">
         <input type="url" value={externalUrl} onChange={(event) => setExternalUrl(event.target.value)} placeholder="粘贴 YouTube / Vimeo / Bilibili / Youku 或 MP4/WebM 链接" />
         <button type="button" className="btn btn-outline btn-sm" onClick={addExternal}>添加视频链接</button>
@@ -2009,6 +2040,8 @@ function MediaField({
   allowVideo?: boolean;
   onValueChange?: (value: string) => void;
 }) {
+  const fieldRef = useRef<HTMLDivElement>(null);
+  const [uploadAlt, setUploadAlt] = useState("");
   const [value, setValue] = useState(initial == null ? "" : String(initial));
   const updateValue = (next: string) => {
     setValue(next);
@@ -2026,10 +2059,14 @@ function MediaField({
     setBusy(true);
     setError("");
     const formData = new FormData();
+    const details = imageUploadContext(fieldRef.current, `Shanze ${name.replace(/_/g, " ")}`);
     formData.set("file", file);
-    formData.set("name", file.name);
-    formData.set("alt", fileMode ? "" : file.name.replace(/\.[^.]+$/, ""));
+    formData.set("name", details.context);
+    formData.set("context", details.context);
+    formData.set("alt", fileMode ? "" : uploadAlt.trim() || details.alt);
     formData.set("folder", fileMode ? "downloads" : "images");
+    formData.set("fileMode", String(fileMode));
+    formData.set("preserveDetail", String(fileMode || details.preserveDetail));
     const token = await getFreshCsrfToken();
     const response = await fetch("/api/admin/upload", {
       method: "POST",
@@ -2052,7 +2089,7 @@ function MediaField({
     setError("");
   }
   return (
-    <div className="cms-media-field">
+    <div className="cms-media-field" ref={fieldRef}>
       <input type="hidden" name={name} value={value} />
       {value && (
         <div className="cms-media-current">
@@ -2081,8 +2118,8 @@ function MediaField({
               fileMode
                 ? ".pdf,.jpg,.jpeg,.png,.webp,.xlsx,.docx"
                 : allowVideo
-                  ? ".jpg,.jpeg,.png,.webp,.mp4,.webm"
-                  : ".jpg,.jpeg,.png,.webp"
+                  ? ".jpg,.jpeg,.png,.webp,.gif,.avif,.mp4,.webm"
+                  : ".jpg,.jpeg,.png,.webp,.gif,.avif"
             }
             onChange={(event) => upload(event.target.files?.[0])}
           />
@@ -2096,6 +2133,8 @@ function MediaField({
           ))}
         </select>
       </div>
+      {!fileMode && <input aria-label="本次上传图片的替代文字 ALT" value={uploadAlt} onChange={(event) => setUploadAlt(event.target.value)} placeholder="上传图片 ALT 可编辑，留空按当前内容自动生成" />}
+      <small className="muted">{fileMode ? "原文件保留原格式，不转换文档。" : "图片自动转换为 WebP 并生成英文文件名；证书预览图保留高清细节，ALT 可在上传前编辑。"}</small>
       {allowVideo && <div className="cms-external-media-row">
         <input type="url" value={externalUrl} onChange={(event) => setExternalUrl(event.target.value)} placeholder="粘贴视频平台链接或 HTTPS MP4/WebM 链接" />
         <button type="button" className="btn btn-outline btn-sm" onClick={useExternalVideo}>使用视频链接</button>
@@ -2121,10 +2160,15 @@ function MediaUpload({ csrf, onDone }: { csrf: string; onDone: () => void }) {
     setBusy(true);
     setError("");
     const formData = new FormData();
+    const folder = folderRef.current?.value.trim() || "general";
+    const context = nameRef.current?.value.trim() || imageUploadContext(fileRef.current, `Shanze ${folder}`).context;
     formData.set("file", file);
-    formData.set("name", nameRef.current?.value.trim() || file.name);
+    formData.set("name", context);
+    formData.set("context", context);
     formData.set("alt", altRef.current?.value.trim() || "");
-    formData.set("folder", folderRef.current?.value.trim() || "general");
+    formData.set("folder", folder);
+    formData.set("fileMode", String(!file.type.startsWith("image/") && !file.type.startsWith("video/")));
+    formData.set("preserveDetail", String(/certificat|证书|认证/i.test(folder) || /certificat|证书|认证/i.test(context)));
     const token = await getFreshCsrfToken();
     const response = await fetch("/api/admin/upload", {
       method: "POST",
@@ -2145,12 +2189,13 @@ function MediaUpload({ csrf, onDone }: { csrf: string; onDone: () => void }) {
         ref={fileRef}
         type="file"
         required
-        accept=".pdf,.jpg,.jpeg,.png,.webp,.mp4,.webm,.xlsx,.docx"
+        accept=".pdf,.jpg,.jpeg,.png,.webp,.gif,.avif,.mp4,.webm,.xlsx,.docx"
       />
       <label>显示名称</label>
       <input ref={nameRef} required />
       <label>替代文字（图片无障碍）</label>
       <input ref={altRef} />
+      <small className="muted">图片自动转换为 WebP 并生成英文文件名；ALT 可编辑，留空按显示名称自动生成。文档和视频保持原格式。</small>
       <label>文件夹</label>
       <input ref={folderRef} defaultValue="general" />
       <button

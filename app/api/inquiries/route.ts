@@ -7,6 +7,8 @@ import { db } from "@/lib/db";
 import { checkRateLimit, cleanText, getClientIp, hasSafeFileSignature, safeUploadTypes, verifyCsrf } from "@/lib/security";
 import { processEmailQueue, renderTemplate } from "@/lib/email";
 import { getSmtpConfig } from "@/lib/smtp-settings";
+import { recordInboundMessage } from "@/lib/customer-center";
+import { checkUploadAntivirus } from "@/lib/upload-antivirus";
 
 export const runtime = "nodejs";
 
@@ -34,10 +36,11 @@ export async function POST(request: Request) {
     if (file.size > maxBytes || !safeUploadTypes.has(file.type) || safeUploadTypes.get(file.type) !== extension.replace(".jpeg",".jpg")) return NextResponse.json({ error: `File ${file.name} is not an allowed type or exceeds the size limit.` }, { status: 400 });
   }
   const preparedFiles=[] as {file:File;buffer:Buffer}[];
-  for(const file of files){const buffer=Buffer.from(await file.arrayBuffer());if(!hasSafeFileSignature(buffer,file.type))return NextResponse.json({error:`File ${file.name} did not pass content verification.`},{status:400});preparedFiles.push({file,buffer});}
+  for(const file of files){const buffer=Buffer.from(await file.arrayBuffer());if(!hasSafeFileSignature(buffer,file.type))return NextResponse.json({error:`File ${file.name} did not pass content verification.`},{status:400});const antivirus=await checkUploadAntivirus(buffer,file.name);if(!antivirus.allowed)return NextResponse.json({error:antivirus.result.status==="infected"?"An attachment was flagged by the antivirus scanner. Upload blocked.":"Attachment scanning is temporarily unavailable. Please contact our team."},{status:antivirus.status});preparedFiles.push({file,buffer});}
   const referenceNo = `ENQ-${new Date().toISOString().slice(0,10).replaceAll("-","")}-${randomBytes(3).toString("hex").toUpperCase()}`;
   const data = parsed.data;
   const inquiry = await db.inquiry.create({ data: { referenceNo, fullName: data.fullName, companyName: data.companyName, email: data.email.toLowerCase(), phone: data.phone, country: data.country, productInterest: data.productInterest, message: data.message, ip, userAgent: request.headers.get("user-agent")?.slice(0,500), consentAt: new Date() } });
+  await recordInboundMessage({ channel: "WEBSITE", externalId: `inquiry:${inquiry.id}`, messageId: `inquiry:${inquiry.id}`, inquiryId: inquiry.id, fullName: data.fullName, companyName: data.companyName, email: data.email, phone: data.phone, country: data.country, subject: `${data.productInterest} · ${referenceNo}`, content: data.message, sourceUrl: request.headers.get("referer") || "/contact", metadata: { referenceNo, productInterest: data.productInterest } });
   if (preparedFiles.length) {
     const directory = path.join(process.cwd(), "storage", "private", inquiry.id);
     await mkdir(directory, { recursive: true });

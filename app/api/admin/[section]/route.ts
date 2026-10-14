@@ -24,9 +24,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ sect
   if (key === "email-templates" || key === "newsletter-subscribers") await ensureNewsletterTemplates();
   const url = new URL(request.url);
   const allowedFilters = new Set(section.fields.map((field) => field.key));
-  const where = Object.fromEntries(
+  const where: Record<string, unknown> = Object.fromEntries(
     [...url.searchParams.entries()].filter(([field, value]) => allowedFilters.has(field) && value !== ""),
   );
+  if (key === "settings") where.AND = [{ group: { not: "security_center" } }];
   const orderBy = ["website-visits", "audit", "login-logs"].includes(key)
     ? { createdAt: "desc" }
     : section.fields.some((field) => field.key === "sortOrder")
@@ -59,6 +60,14 @@ export async function GET(request: Request, { params }: { params: Promise<{ sect
       : {}),
   });
   let preparedData = key === "products" ? rawData.map((row: Record<string, unknown>) => ({ ...row, galleryImages: JSON.stringify(row.images || []) })) : rawData;
+  if (key === "inquiries") {
+    const inquiryIds = rawData.map((row: Record<string, unknown>) => String(row.id));
+    const conversations = inquiryIds.length ? await db.conversation.findMany({
+      where: { inquiryId: { in: inquiryIds } }, orderBy: { lastMessageAt: "asc" },
+      include: { contact: true, messages: { orderBy: { createdAt: "asc" }, include: { author: { select: { id: true, name: true } } } } },
+    }) : [];
+    preparedData = rawData.map((row: Record<string, unknown>) => ({ ...row, conversations: conversations.filter((item) => item.inquiryId === row.id) }));
+  }
   if (key === "audit") {
     const actorSnapshots = await db.$queryRawUnsafe<Array<{ id: string; actorName: string | null; actorEmail: string | null }>>(
       'SELECT "id", "actorName", "actorEmail" FROM "AuditLog"',
@@ -112,6 +121,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ sec
   try {
     const input = await request.json();
     const data = coerceCmsData(section, input);
+    if (key === "settings" && (data.group === "security_center" || String(data.key || "").startsWith("security_"))) return NextResponse.json({ error: "安全检测记录由安全中心维护。" }, { status: 403 });
     if (section.key === "inquiries") Object.assign(data, { referenceNo: `ENQ-${Date.now()}`, consentAt: new Date() });
     const created = await model(section.model).create({ data });
     if (section.key === "products" && input.galleryImages) {

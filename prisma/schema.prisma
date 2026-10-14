@@ -32,6 +32,26 @@ enum EmailStatus {
   CANCELLED
 }
 
+enum ConversationChannel {
+  WEBSITE
+  EMAIL
+  WHATSAPP
+  LINKEDIN
+  CRISP
+}
+
+enum ConversationStatus {
+  OPEN
+  PENDING
+  RESOLVED
+}
+
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
+  INTERNAL
+}
+
 model User {
   id                String              @id @default(cuid())
   email             String              @unique
@@ -53,6 +73,8 @@ model User {
   assignmentsFrom   InquiryAssignment[] @relation("InquiryAssignmentFrom")
   assignmentsTo     InquiryAssignment[] @relation("InquiryAssignmentTo")
   assignmentsMade   InquiryAssignment[] @relation("InquiryAssignmentActor")
+  assignedConversations Conversation[]  @relation("ConversationAssignee")
+  conversationMessages ConversationMessage[] @relation("ConversationAuthor")
 }
 
 model Role {
@@ -393,6 +415,7 @@ model Workshop {
 model Certificate {
   id            String    @id @default(cuid())
   name          String
+  category      String    @default("PRODUCT")
   issuer        String?
   certificateNo String?
   image         String?
@@ -402,6 +425,8 @@ model Certificate {
   isVisible     Boolean   @default(true)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+
+  @@index([category, isVisible, sortOrder])
 }
 
 model Inquiry {
@@ -481,6 +506,64 @@ model InquiryAssignment {
 
   @@index([inquiryId, createdAt])
   @@index([toAssigneeId, createdAt])
+}
+
+model CustomerContact {
+  id          String         @id @default(cuid())
+  fullName    String?
+  companyName String?
+  email       String?        @unique
+  phone       String?        @unique
+  country     String?
+  source      String         @default("website")
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  conversations Conversation[]
+
+  @@index([companyName])
+  @@index([createdAt])
+}
+
+model Conversation {
+  id           String             @id @default(cuid())
+  publicToken  String             @unique @default(cuid())
+  contactId    String
+  channel      ConversationChannel
+  externalId   String?
+  subject      String?
+  status       ConversationStatus @default(OPEN)
+  sourceUrl    String?
+  assignedToId String?
+  inquiryId    String?
+  lastMessageAt DateTime          @default(now())
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  contact      CustomerContact    @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  assignedTo   User?              @relation("ConversationAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  messages     ConversationMessage[]
+
+  @@unique([channel, externalId])
+  @@index([status, lastMessageAt])
+  @@index([assignedToId, status])
+  @@index([contactId, lastMessageAt])
+}
+
+model ConversationMessage {
+  id             String           @id @default(cuid())
+  conversationId String
+  direction      MessageDirection
+  content        String
+  externalId     String?
+  authorId       String?
+  metadataJson   String?
+  deliveredAt    DateTime?
+  readAt         DateTime?
+  createdAt      DateTime         @default(now())
+  conversation   Conversation     @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  author         User?            @relation("ConversationAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@unique([conversationId, externalId])
+  @@index([conversationId, createdAt])
 }
 
 model EmailTemplate {

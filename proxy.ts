@@ -4,12 +4,12 @@ export function proxy(request: NextRequest) {
   const nonce = crypto.randomUUID().replaceAll("-", "");
   const csp = [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob:",
+    "img-src 'self' data: blob: https://*.google-analytics.com https://www.googletagmanager.com",
     "media-src 'self' blob: https:",
     "font-src 'self' data:",
-    "connect-src 'self'",
+    "connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.google.com https://www.googletagmanager.com",
     "frame-src 'self' https://www.google.com https://maps.google.com https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com https://player.bilibili.com https://player.youku.com",
     "frame-ancestors 'none'",
     "base-uri 'self'",

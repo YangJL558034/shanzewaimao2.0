@@ -22,8 +22,10 @@ export async function PUT(request: Request, { params }: { params: Promise<{ sect
   try {
     const before = await model(section.model).findUnique({ where: { id } });
     if (!before) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (key === "settings" && before.group === "security_center") return NextResponse.json({ error: "安全检测记录不可在站点设置中修改。" }, { status: 403 });
     const input = await request.json();
     const data = coerceCmsData(section, input);
+    if (key === "settings" && (data.group === "security_center" || String(data.key || "").startsWith("security_"))) return NextResponse.json({ error: "安全检测记录由安全中心维护。" }, { status: 403 });
     if (section.key === "newsletter-subscribers" && "isActive" in data) {
       data.unsubscribedAt = data.isActive ? null : new Date();
     }
@@ -85,6 +87,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ s
   if (!(await verifyCsrf(request))) return NextResponse.json({ error: "Invalid CSRF token" }, { status: 403 });
   const before = await model(section.model).findUnique({ where: { id } });
   if (!before) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (key === "settings" && before.group === "security_center") return NextResponse.json({ error: "安全检测记录由安全中心维护，不可在此删除。" }, { status: 403 });
   if (section.key === "media") {
     const usage = await getMediaUsageMap([String(before.path || "")]);
     const references = usage.get(String(before.path || "")) || [];

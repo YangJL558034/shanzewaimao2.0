@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRightLeft,
   Building2,
@@ -40,6 +40,7 @@ type Assignment = {
   assignedBy?: Admin | null;
 };
 type Attachment = { id: string; fileName: string; size: number };
+type Conversation = { id: string; channel: string; status: string; messages: { id: string; content: string; direction: string; createdAt: string; author?: Admin | null }[] };
 type Inquiry = {
   id: string;
   referenceNo: string;
@@ -61,6 +62,7 @@ type Inquiry = {
   notes?: Note[];
   assignmentHistory?: Assignment[];
   attachments?: Attachment[];
+  conversations?: Conversation[];
 };
 
 const statuses = ["NEW", "ASSIGNED", "CONTACTED", "QUALIFIED", "QUOTED", "WON", "LOST", "SPAM"];
@@ -109,26 +111,56 @@ export function InquiryCrm() {
   const [statusAfter, setStatusAfter] = useState("CONTACTED");
   const [contactedAt, setContactedAt] = useState(localInputValue());
   const [nextActionAt, setNextActionAt] = useState("");
+  const requestRef = useRef<AbortController | null>(null);
+  const mountedRef = useRef(true);
+  const busyRef = useRef(false);
 
-  const load = useCallback(async (selectedId?: string) => {
-    setLoading(true);
-    setError("");
+  const load = useCallback(async ({ background = false }: { background?: boolean } = {}) => {
+    if (!mountedRef.current || (background && (busyRef.current || requestRef.current))) return;
+    requestRef.current?.abort();
+    const request = new AbortController();
+    requestRef.current = request;
+    if (!background) { setLoading(true); setError(""); }
     try {
-      const response = await fetch("/api/admin/inquiries", { credentials: "same-origin", cache: "no-store" });
+      const response = await fetch("/api/admin/inquiries", { credentials: "same-origin", cache: "no-store", signal: request.signal });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || "询盘加载失败");
+      if (!mountedRef.current || requestRef.current !== request || (background && busyRef.current)) return;
       const nextRows = payload.data as Inquiry[];
       setRows(nextRows);
       setAdmins((payload.relations?.admins || []) as Admin[]);
-      if (selectedId) setSelected(nextRows.find((item) => item.id === selectedId) || null);
+      // Keep the active customer and update its server data. Drafts only reset when its ID changes.
+      setSelected((current) => current ? nextRows.find((item) => item.id === current.id) || current : null);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "询盘加载失败");
+      if (request.signal.aborted || !mountedRef.current || requestRef.current !== request) return;
+      const message = cause instanceof Error ? cause.message : "询盘加载失败";
+      setError((current) => background ? current || message : message);
     } finally {
-      setLoading(false);
+      if (requestRef.current === request) {
+        requestRef.current = null;
+        if (mountedRef.current && !background) setLoading(false);
+      }
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    mountedRef.current = true;
+    void load();
+    const synchronize = () => {
+      if (!document.hidden) void load({ background: true });
+    };
+    const timer = window.setInterval(synchronize, 5000);
+    window.addEventListener("focus", synchronize);
+    document.addEventListener("visibilitychange", synchronize);
+    return () => {
+      mountedRef.current = false;
+      requestRef.current?.abort();
+      requestRef.current = null;
+      window.clearInterval(timer);
+      window.removeEventListener("focus", synchronize);
+      document.removeEventListener("visibilitychange", synchronize);
+    };
+  }, [load]);
 
   useEffect(() => {
     if (!selected) return;
@@ -158,6 +190,8 @@ export function InquiryCrm() {
   };
 
   async function mutate(url: string, body: unknown, method = "POST") {
+    busyRef.current = true;
+    requestRef.current?.abort();
     setBusy(true);
     setError("");
     try {
@@ -170,12 +204,13 @@ export function InquiryCrm() {
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || "操作失败");
-      if (selected) await load(selected.id);
+      await load();
       return true;
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "操作失败");
       return false;
     } finally {
+      busyRef.current = false;
       setBusy(false);
     }
   }
@@ -260,6 +295,8 @@ export function InquiryCrm() {
             </div><div className="crm-requirement"><strong>客户需求</strong><p>{selected.message}</p></div>
             {(selected.attachments || []).length > 0 && <div className="crm-attachments"><strong>客户附件</strong>{selected.attachments!.map((file) => <a href={`/api/admin/inquiries/attachments/${file.id}`} key={file.id}><Download size={13}/>{file.fileName}<small>{Math.ceil(file.size / 1024)} KB</small></a>)}</div>}
             </section>
+
+            {(selected.conversations || []).map((conversation) => <section className="crm-card" key={conversation.id}><h3><MessageSquarePlus size={16}/>客服消息 · {conversation.channel}</h3><div className="crm-timeline">{conversation.messages.map((message) => <article key={message.id}><i className={`timeline-dot ${message.direction === "OUTBOUND" ? "handoff" : "note"}`}/><div><header><strong>{message.direction === "OUTBOUND" ? "销售回复" : "客户消息"}</strong><span>{formatDate(message.createdAt)}</span></header><p>{message.content}</p></div></article>)}</div><a className="btn btn-outline btn-sm mt-3" href={`/admin/inbox?conversation=${conversation.id}`}>在客服中心回复</a></section>)}
 
             <section className="crm-card"><h3><MessageSquarePlus size={16}/>新增跟进记录</h3><div className="crm-followup-form">
               <label>跟进方式<select value={noteType} onChange={(event) => setNoteType(event.target.value)}>{Object.entries(activityLabels).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></label>

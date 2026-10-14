@@ -1,0 +1,20 @@
+.company-history { scroll-margin-top:100px; }
+.company-history-summary { align-items:start; gap:48px; }
+.company-history-summary .section-copy { font-size:16px; line-height:1.85; color:#526780; }
+.company-history-summary .btn { margin-top:18px; }
+.company-history-image { margin:0; overflow:hidden; border-radius:16px; border:1px solid #dce8f6; background:linear-gradient(150deg,#eef5ff,#f8fbff); box-shadow:0 12px 30px rgba(22,61,105,.06); }
+.company-history-image img { display:block; width:100%; height:auto; max-height:380px; object-fit:contain; }
+.company-history-image figcaption { padding:12px 18px; color:#607993; font-size:12px; line-height:1.6; border-top:1px solid #dce8f6; }
+.company-profile-market-references { margin:0 auto; max-width:1000px; border:1px solid #dce8f6; border-radius:14px; background:#fff; overflow:hidden; }
+.company-profile-market-references img { display:block; width:100%; height:auto; max-height:440px; object-fit:contain; }
+.company-profile-laboratory-image { object-fit:contain; }
+.company-timeline { position:relative; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:22px; list-style:none; margin:44px 0 0; padding:0; }
+.company-timeline::before { content:""; position:absolute; height:2px; left:0; right:0; top:21px; background:linear-gradient(90deg,#0965dc,#aecffc); }
+.company-timeline-milestone { position:relative; display:flex; flex-direction:column; align-items:flex-start; min-width:0; }
+.company-timeline-date { display:inline-flex; align-items:center; justify-content:center; padding:9px 18px; min-width:90px; min-height:44px; position:relative; z-index:1; border-radius:24px; color:#fff; background:#0861d8; box-shadow:0 4px 12px rgba(8,97,216,.14); font-size:17px; font-weight:700; letter-spacing:.02em; }
+.company-timeline-card { flex:1; width:100%; padding:24px; margin-top:20px; background:#f8fbff; border:1px solid #dce8f6; border-radius:12px; }
+.company-timeline-card h3 { font-size:19px; line-height:1.4; color:#163b63; margin:0 0 12px; }
+.company-timeline-card p { margin:0; font-size:14px; line-height:1.85; color:#526780; white-space:pre-line; }
+.company-timeline-card img { display:block; width:100%; height:auto; margin-top:18px; border-radius:8px; }
+@media(max-width:1100px){.company-timeline{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:28px}.company-timeline::before{display:none}.company-timeline-milestone::before{content:"";position:absolute;left:22px;right:0;top:21px;height:2px;background:#b8d4f6}.company-timeline-card{padding:22px}.company-history-summary{gap:30px}}
+@media(max-width:700px){.company-history-summary{gap:24px}.company-history-summary .section-copy{font-size:15px}.company-history-image img{max-height:300px}.company-timeline{grid-template-columns:1fr;gap:0;margin-top:32px;padding-left:18px}.company-timeline::before{display:block;top:20px;bottom:35px;left:0;right:auto;width:2px;height:auto;background:#bed6f4}.company-timeline-milestone{padding-bottom:24px}.company-timeline-milestone:last-child{padding-bottom:0}.company-timeline-milestone::before{left:-22px;right:auto;top:17px;width:10px;height:10px;border-radius:50%;background:#0861d8;box-shadow:0 0 0 4px #edf5ff}.company-timeline-date{font-size:16px;min-height:40px;padding:8px 16px}.company-timeline-card{margin-top:12px;padding:20px}.company-timeline-card h3{font-size:18px}.company-timeline-card p{font-size:14px;line-height:1.8}}

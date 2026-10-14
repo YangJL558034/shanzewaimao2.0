@@ -1,10 +1,11 @@
-import { createHash } from "node:crypto";
-import { copyFile, readFile, unlink } from "node:fs/promises";
+import { createHash, randomUUID } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireApiUser } from "@/lib/auth";
-import { safeBackupPath, validateSQLiteBackup } from "@/lib/backup";
+import { configuredDatabasePath, safeBackupPath, validateSQLiteBackup } from "@/lib/backup";
+import { createSQLiteSnapshot, restoreSQLiteSnapshot } from "@/lib/sqlite-snapshot";
 import { verifyCsrf } from "@/lib/security";
 
 export const runtime = "nodejs";
@@ -31,6 +32,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: "数据库备份校验失败，禁止恢复" }, { status: 409 });
     }
     validateSQLiteBackup(backupPath, buffer);
+    const target = await configuredDatabasePath();
+    const safetyCopy = path.join(process.cwd(), "backups", `pre-restore-${Date.now()}-${randomUUID().slice(0, 8)}.db`);
+    await createSQLiteSnapshot(target, safetyCopy);
+    validateSQLiteBackup(safetyCopy);
     await db.auditLog.create({
       data: {
         userId: auth.user.id,
@@ -40,22 +45,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         afterJson: JSON.stringify({ fileName: backup.fileName, size: backup.size }),
       },
     });
-    await db.$queryRawUnsafe("PRAGMA wal_checkpoint(FULL)").catch(() => undefined);
-
-    const target = path.join(process.cwd(), "prisma", "dev.db");
-    const safetyCopy = path.join(process.cwd(), "backups", `pre-restore-${Date.now()}.db`);
-    await copyFile(target, safetyCopy);
     await db.$disconnect();
-    await Promise.all([
-      unlink(`${target}-wal`).catch(() => undefined),
-      unlink(`${target}-shm`).catch(() => undefined),
-    ]);
-    try {
-      await copyFile(backupPath, target);
-    } catch (error) {
-      await copyFile(safetyCopy, target).catch(() => undefined);
-      throw error;
-    }
+    await restoreSQLiteSnapshot(backupPath, target);
 
     return NextResponse.json({
       ok: true,

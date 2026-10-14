@@ -1,13 +1,26 @@
 import "server-only";
-import { copyFile, mkdir, readFile, stat, unlink, writeFile } from "node:fs/promises";
-import { createHash } from "node:crypto";
+import { mkdir, readFile, realpath, stat, unlink, writeFile } from "node:fs/promises";
+import { createHash, randomUUID } from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
 import path from "node:path";
 import { db } from "@/lib/db";
 import { buildSettingsMap } from "@/lib/page-content";
+import { resolveSQLiteDatabasePath } from "@/lib/sqlite-path.mjs";
+import { createSQLiteSnapshot } from "@/lib/sqlite-snapshot";
 
 const BACKUP_LIMIT = 5;
 export const MAX_BACKUP_UPLOAD_BYTES = 256 * 1024 * 1024;
+
+export async function configuredDatabasePath() {
+  const configured = resolveSQLiteDatabasePath();
+  const databases = await db.$queryRawUnsafe<Array<{ name: string; file: string }>>("PRAGMA database_list");
+  const actual = databases.find((database) => database.name === "main")?.file;
+  if (!actual) throw new Error("当前数据库不是可备份的 SQLite 文件");
+  const [configuredReal, actualReal] = await Promise.all([realpath(configured), realpath(actual)]);
+  const normalize = (value: string) => process.platform === "win32" ? value.toLowerCase() : value;
+  if (normalize(configuredReal) !== normalize(actualReal)) throw new Error("DATABASE_URL 与当前数据库连接不一致，已停止备份/恢复以保护数据");
+  return actualReal;
+}
 
 export function safeBackupPath(filePath: string) {
   const directory = path.resolve(process.cwd(), "backups");
@@ -40,13 +53,13 @@ export function validateSQLiteBackup(filePath: string, buffer?: Buffer) {
 }
 
 export async function createDatabaseBackup(createdBy?: string | null) {
-  await db.$queryRawUnsafe("PRAGMA wal_checkpoint(FULL)").catch(() => undefined);
-  const source = path.join(process.cwd(), "prisma", "dev.db");
+  const source = await configuredDatabasePath();
   const directory = path.join(process.cwd(), "backups");
   await mkdir(directory, { recursive: true });
-  const fileName = `enercore-${new Date().toISOString().replace(/[:.]/g, "-")}.db`;
+  const fileName = `enercore-${new Date().toISOString().replace(/[:.]/g, "-")}-${randomUUID().slice(0, 8)}.db`;
   const target = path.join(directory, fileName);
-  await copyFile(source, target);
+  await createSQLiteSnapshot(source, target);
+  validateSQLiteBackup(target);
   const [buffer, info] = await Promise.all([readFile(target), stat(target)]);
   const record = await db.backupRecord.create({
     data: {

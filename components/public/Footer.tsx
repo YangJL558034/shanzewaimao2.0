@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SeoImage } from "@/components/public/SeoImage";
 import { Facebook, Linkedin, Mail, MapPin, Music2, Phone, Youtube } from "lucide-react";
 import { db } from "@/lib/db";
 import { getLocale, translateEntity } from "@/lib/i18n";
@@ -49,7 +50,7 @@ export async function Footer() {
   const links = localizedFooterNavigation.length
     ? localizedFooterNavigation.map((item) => [item.label, item.href])
     : fallbackLinks;
-  const brandName = pick("site_name", "Shanze");
+  const brandName = pick("site_name", zh ? "山泽新能源科技" : "Shanze New Energy Technology");
   const logoUrl = map.logo_url || "";
   const socialLinks = [
     { key: "social_facebook", label: "Facebook", icon: Facebook, fallback: "https://www.facebook.com/" },
@@ -83,7 +84,7 @@ export async function Footer() {
             <div>
               <div className="brand footer-brand">
                 {logoUrl ? (
-                  <img className="brand-logo-image" src={logoUrl} alt={brandName} />
+                  <SeoImage className="brand-logo-image" src={logoUrl} alt={brandName} sizes="48px" />
                 ) : (
                   <span className="brand-mark">{brandName.slice(0, 1)}</span>
                 )}
@@ -138,6 +139,15 @@ export async function Footer() {
               <NewsletterForm locale={locale} compact />
             </div>
           </div>
+          <nav className="footer-solutions" aria-label={zh ? "制造与采购指南" : "Manufacturing and sourcing guides"}>
+            <span>{zh ? "制造解决方案" : "Manufacturing solutions"}</span>
+            <Link href="/power-bank-manufacturer">{zh ? "充电宝制造商" : "Power Bank Manufacturer"}</Link>
+            <Link href="/magnetic-power-bank-oem">{zh ? "磁吸充电宝 OEM" : "Magnetic Power Bank OEM"}</Link>
+            <Link href="/wireless-charger-manufacturer">{zh ? "无线充电器制造商" : "Wireless Charger Manufacturer"}</Link>
+            <Link href="/custom-power-bank-supplier">{zh ? "定制充电宝供应商" : "Custom Power Bank Supplier"}</Link>
+            <Link href="/blog">{zh ? "行业博客" : "Industry Blog"}</Link>
+            <button type="button" className="footer-cookie-settings" id="cookie-preferences-trigger">{zh ? "偏好设置" : "Privacy preferences"}</button>
+          </nav>
           <div className="footer-bottom">
             <span>
               {pick("footer_copyright", `© ${new Date().getFullYear()} ${pick("company_name", "Shanze New Energy Technology Co., Ltd.")} ${zh ? "版权所有。" : "All Rights Reserved."}`)}

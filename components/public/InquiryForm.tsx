@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { Send, UploadCloud } from "lucide-react";
+import { trackPublicEvent } from "@/lib/analytics-client";
 
 export function InquiryForm({ categories, locale = "en", heading, intro, submitLabel }: { categories: { id: string; name: string }[]; locale?: string; heading?: string; intro?: string; submitLabel?: string }) {
   const zh = locale === "zh";
@@ -29,6 +30,7 @@ export function InquiryForm({ categories, locale = "en", heading, intro, submitL
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || (zh ? "询盘发送失败" : "Unable to send inquiry"));
+      trackPublicEvent("generate_lead", "website_form");
       setStatus({ type: "success", message: zh ? `感谢您，询盘 ${data.referenceNo} 已安全入库，我们会尽快联系您。` : `Thank you. Your inquiry ${data.referenceNo} has been saved. Our team will contact you shortly.` });
       form.reset();
     } catch (error) {

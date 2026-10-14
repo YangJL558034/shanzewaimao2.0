@@ -4,6 +4,8 @@ import { Boxes, FileText, Globe2, Newspaper } from "lucide-react";
 import { db } from "@/lib/db";
 import { getLocale, translateEntities } from "@/lib/i18n";
 import { getSeoMetadata } from "@/lib/seo";
+import { seoLandings } from "@/lib/seo-landings";
+import { isBlogCategorySlug } from "@/lib/blog";
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata() {
@@ -17,7 +19,7 @@ export default async function SiteMapPage() {
     db.navigationItem.findMany({ where: { location: "HEADER", isVisible: true }, orderBy: { sortOrder: "asc" } }),
     db.productCategory.findMany({ where: { isVisible: true }, orderBy: { sortOrder: "asc" } }),
     db.product.findMany({ where: { status: "PUBLISHED" }, orderBy: { sortOrder: "asc" }, take: 100 }),
-    db.news.findMany({ where: { status: "PUBLISHED" }, orderBy: { publishedAt: "desc" }, take: 100 }),
+    db.news.findMany({ where: { status: "PUBLISHED" }, include: { category: true }, orderBy: { publishedAt: "desc" }, take: 100 }),
   ]);
   const [navigation, categories, products, news] = await Promise.all([
     translateEntities("NavigationItem", rawNavigation, ["label"], locale),
@@ -29,12 +31,14 @@ export default async function SiteMapPage() {
     ...navigation.map((item) => ({ label: item.label, href: item.href })),
     { label: zh ? "隐私政策" : "Privacy Policy", href: "/privacy-policy" },
     { label: zh ? "使用条款" : "Terms of Use", href: "/terms-of-use" },
+    { label: zh ? "行业博客" : "Industry Blog", href: "/blog" },
   ];
   const groups = [
     { title: zh ? "主要页面" : "Main Pages", Icon: Globe2, links: mainLinks },
     { title: zh ? "产品分类" : "Product Categories", Icon: Boxes, links: categories.map((item) => ({ label: item.name, href: `/products?category=${item.slug}` })) },
     { title: zh ? "产品详情" : "Products", Icon: FileText, links: products.map((item) => ({ label: item.name, href: `/products/${item.slug}` })) },
-    { title: zh ? "新闻资讯" : "News & Insights", Icon: Newspaper, links: news.map((item) => ({ label: item.title, href: `/news/${item.slug}` })) },
+    { title: zh ? "制造解决方案" : "Manufacturing Solutions", Icon: FileText, links: Object.entries(seoLandings).map(([slug, item]) => ({ label: item.h1, href: `/${slug}` })) },
+    { title: zh ? "博客与新闻" : "Blog & News", Icon: Newspaper, links: news.map((item) => ({ label: item.title, href: `/${isBlogCategorySlug(item.category.slug) ? "blog" : "news"}/${item.slug}` })) },
   ];
   return <>
     <section className="legal-page-hero"><div className="container-site"><span className="legal-page-icon"><Globe2 size={24} /></span><div><div className="eyebrow">{zh ? "网站导航" : "Website Directory"}</div><h1>{zh ? "网站地图" : "Sitemap"}</h1><p>{zh ? "快速浏览公司页面、产品分类、产品详情和新闻资讯。" : "Quickly browse company pages, product categories, products and news."}</p></div></div></section>

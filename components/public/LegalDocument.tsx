@@ -3,6 +3,7 @@ import { ShieldCheck } from "lucide-react";
 
 import { db } from "@/lib/db";
 import { getLocale, translateEntity } from "@/lib/i18n";
+import { getSeoIntegrationConfig } from "@/lib/seo-settings";
 
 type LegalKind = "privacy" | "terms";
 
@@ -137,6 +138,7 @@ function ContentBlocks({ content }: { content: string }) {
 export async function LegalDocument({ kind }: { kind: LegalKind }) {
   const locale = await getLocale();
   const zh = locale === "zh";
+  const { ga4Id } = kind === "privacy" ? await getSeoIntegrationConfig() : { ga4Id: "" };
   const defaults = documents[kind];
   const raw = await db.page.findUnique({ where: { slug: defaults.slug } }).catch(() => null);
   const localized = raw ? await translateEntity("Page", raw, ["title", "excerpt", "content"], locale) : null;
@@ -160,7 +162,7 @@ export async function LegalDocument({ kind }: { kind: LegalKind }) {
       </div>
     </section>
     <section className="section legal-page-section"><div className="container-site legal-page-layout">
-      <article className="card legal-document-card"><ContentBlocks content={content} /></article>
+      <article className="card legal-document-card"><ContentBlocks content={content} />{kind === "privacy" && ga4Id && <section className="legal-document-body mt-8"><h2>{zh ? "Google Analytics 网站统计" : "Google Analytics website measurement"}</h2><p>{zh ? "本网站配置 Google Analytics，用于分析访问页面、来源和询盘转化。只有您同意统计 Cookie 后才加载；不向 Google 发送姓名、邮箱、电话或聊天和询盘正文。您可以通过页脚 Cookie 设置撤回统计同意，撤回不会影响客服功能。Google 按其政策处理统计数据，可能涉及跨境处理。" : "This website uses Google Analytics to measure page visits, referrals and inquiry conversions only after analytics consent. We do not send names, emails, phone numbers or chat and inquiry text to Google. Withdraw analytics consent through Cookie preferences in the footer without affecting customer support. Google processes analytics data under its policies, potentially outside your country."}</p><a className="text-link" href="https://policies.google.com/privacy" target="_blank" rel="noreferrer">{zh ? "Google 隐私政策" : "Google Privacy Policy"}</a></section>}</article>
       <aside className="card legal-side-card"><strong>{zh ? "需要帮助？" : "Need help?"}</strong><p>{zh ? "如对本页面内容或您的资料处理方式有疑问，请联系我们。" : "Contact us if you have questions about this page or how your information is handled."}</p><Link className="btn btn-primary btn-sm" href="/contact">{zh ? "联系我们" : "Contact Us"}</Link></aside>
     </div></section>
   </>;
