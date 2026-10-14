@@ -16,6 +16,10 @@
 
 生产模式回归结果见运行后生成的 `outputs/production-release-check.json`；这是隔离数据库副本上的检查，不是线上已经发布的证明。
 
+## 网站内容一起发布
+
+开发站后台填写的内容已导出为 `content/site-content.json`，包含完整新闻和博客正文、翻译、证书分类及图片关联。`npm run db:deploy` 在迁移成功后自动导入，`npm start` 也会检查；新站 Seed 改为初始化账号并加载实际内容。首次应用更新匹配的网站记录并保留运营数据，后续版本保留线上已修改的冲突记录，实际应用前自动生成私有 SQLite 快照。详见 [网站内容发布说明](website-content-release.md)。未来新的后台修改需先运行 `npm run content:export` 再提交。
+
 ## 可以更新与必须保留的文件
 
 | 分类 | 发布规则 |

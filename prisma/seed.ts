@@ -2,6 +2,7 @@ import { PrismaClient, ContentStatus } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { readdir, stat } from "node:fs/promises";
 import { extname, join } from "node:path";
+import { existsSync } from "node:fs";
 import { defaultPageSections, defaultPageSectionZh } from "../lib/page-defaults";
 import { companyAboutBanner, companyAboutDocument, companyProfileSettings } from "../lib/company-profile";
 import { companyCertificates } from "../lib/company-certificates";
@@ -26,6 +27,13 @@ async function main(){
   const email=(process.env.DEFAULT_ADMIN_EMAIL||"admin@enercore.com").toLowerCase();const password=process.env.DEFAULT_ADMIN_PASSWORD||"ChangeMe123!";
   const admin=await prisma.user.upsert({where:{email},update:{name:"Shanze",isActive:true},create:{email,name:"Shanze",passwordHash:await bcrypt.hash(password,12),isActive:true}});
   await prisma.userRole.upsert({where:{userId_roleId:{userId:admin.id,roleId:superRole.id}},update:{},create:{userId:admin.id,roleId:superRole.id}});
+
+  // A clone contains the actual edited website content. Initialize accounts only;
+  // the db:seed script imports that release instead of overwriting it with demos.
+  if (existsSync(join(process.cwd(), "content", "site-content.json"))) {
+    console.log("Administrator initialized. Website content will be loaded from the checked-in release.");
+    return;
+  }
 
   const settings=[['general','site_name','Shanze',true],['general','site_name_zh','山泽新能源科技',true],['general','site_tagline','POWERING YOUR LIFE',true],['general','site_tagline_zh','可靠能源，驱动未来',true],['general','logo_url','',true],['company','company_name','Shanze New Energy Technology Co., Ltd.',true],['company','company_name_zh','山泽新能源科技有限公司',true],['company','company_description','Professional OEM/ODM manufacturer of portable charging products, providing reliable solutions to customers worldwide.',true],['company','company_description_zh','专业便携充电产品 OEM/ODM 制造商，为全球客户提供可靠的充电解决方案。',true],['general','cta_title','Ready to Start Your Project?',true],['general','cta_title_zh','准备开始您的项目了吗？',true],['general','cta_description','Let’s build the right charging solution for your market.',true],['general','cta_description_zh','让我们为您的市场打造合适的充电解决方案。',true],['general','cta_label','Get a Quote Now',true],['general','cta_label_zh','立即获取报价',true],['contact','phone','+86 755 8888 9999',true],['contact','email','sales@shanzesz.com',true],['contact','address','Building A, No.168 Industrial Road, Shenzhen, Guangdong, China',true],['contact','address_zh','中国广东省深圳市工业路168号A栋',true],['company','founded','1999 · technical foundation',true],['company','factory_area','',true],['company','monthly_output','',true],['company','export_countries','',true]] as const;
   const normalizedSettings=settings.map((item)=>Object.hasOwn(companyProfileSettings,item[1])?[item[0],item[1],companyProfileSettings[item[1]],item[3]] as const:item);

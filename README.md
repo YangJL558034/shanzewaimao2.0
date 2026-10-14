@@ -183,6 +183,8 @@ SMTP 留空时，询盘仍然正常入库，邮件任务保持待发送状态，
 
 ## 生产构建与部署
 
+当前开发站填写的页面、产品、证书、新闻和行业博客已打包在 `content/site-content.json`，数据库引用的公共素材一起提交。`db:deploy`、`db:seed` 与 `npm start` 会导入对应内容，克隆后不会再只看到旧示例。已有站点可运行 `npm run content:preview` 和 `npm run content:import` 同步这次内容；完整流程见 [网站内容发布说明](docs/website-content-release.md)。客户与账号数据不在内容包中。
+
 以下仅用于**没有任何现有业务数据的全新安装**，不要在更新已有站点时复制 `.env` 或执行 Seed。Linux 云服务器首次克隆后，使用生产迁移和生产启动命令：
 
 ```bash
