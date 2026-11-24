@@ -15985,10 +15985,8 @@ function init(renderer) {
       object.castShadow=!object.material.transparent;
       object.receiveShadow=!object.material.transparent;
     });
-    for(const part of parts){
-      part.open=false;
-      part.group.position.set(0,0,0);
-    }
+    // Keep the current exploded/assembled state when switching views, so the
+    // "结构拆解" entry does not silently reassemble the product.
     selected=undefined;
     restoreCamera();
     updateUI();
@@ -16256,6 +16254,12 @@ function init(renderer) {
   new ResizeObserver(resize).observe(stage);
   resize();
   onDisplayModeChange();
+  // Open straight into the exploded diagram: the structure reads immediately
+  // while the interface stays the clean product view (no part list panels).
+  if(!EMBED){
+    for(const part of parts)part.open=true;
+    updateUI();
+  }
   let time=performance.now();
   // Small read-only hook so the layout can be checked from automated tests.
   window.__brViewer={get state(){const box=new THREE.Box3().setFromObject(productRoot);let maxX=0,maxY=0,x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;const sw=stage.clientWidth,sh=stage.clientHeight;for(const x of [box.min.x,box.max.x])for(const y of [box.min.y,box.max.y])for(const z of [box.min.z,box.max.z]){const p=new THREE.Vector3(x,y,z).project(camera);maxX=Math.max(maxX,Math.abs(p.x));maxY=Math.max(maxY,Math.abs(p.y));const sx=(p.x+1)/2*sw,sy=(1-p.y)/2*sh;x0=Math.min(x0,sx);y0=Math.min(y0,sy);x1=Math.max(x1,sx);y1=Math.max(y1,sy);}return{displayMode,focusPart:focusPart?.id??null,open:parts.filter(p=>p.open).map(p=>p.id),positions:Object.fromEntries(parts.map(p=>[p.id,p.group.position.toArray().map(v=>+v.toFixed(2))])),radius:+spherical.radius.toFixed(2),finish:(()=>{const b=parts.find(x=>x.id==='body');const m=b&&b.materials&&b.materials.find(mm=>mm.userData.finish==='shell');return m?'#'+m.color.getHexString():null})(),ndc:{maxX:+maxX.toFixed(3),maxY:+maxY.toFixed(3)},stage:{w:sw,h:sh},screenBox:{x0:Math.round(x0),y0:Math.round(y0),x1:Math.round(x1),y1:Math.round(y1)}};}};
