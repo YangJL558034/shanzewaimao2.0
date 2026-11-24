@@ -28,7 +28,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const legalRoutes = new Set(["privacy-policy", "terms-of-use", "site-map"]);
   const landingRoutes = Object.keys(seoLandings);
   const routeSeo = new Map(seoRecords.map((item) => [item.route, item]));
-  const pageSlugs = ["", "about", "products", "factory", "quality", "news", "blog", "contact", ...landingRoutes, ...legalRoutes];
+  const pageSlugs = ["", "about", "products", "portable-power", "factory", "quality", "news", "blog", "contact", ...landingRoutes, ...legalRoutes];
   const publicPaths = new Set(pageSlugs.map((slug) => `/${slug}`));
   const pageImages = new Map<string, Set<string>>();
   const publicOrigin = new URL(absoluteUrl("/"));

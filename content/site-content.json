@@ -603,9 +603,9 @@
         "image": "/content-assets/1788940184466-354f4c8749d4284b-61645109d2f7aa0d.jpg",
         "icon": "",
         "sortOrder": 6,
-        "isVisible": 1,
+        "isVisible": 0,
         "createdAt": 1788940189571,
-        "updatedAt": 1791976506252
+        "updatedAt": 1795509891000
       },
       {
         "id": "cmv4ptfmq006i84i6rwrb8mds",
@@ -617,7 +617,7 @@
         "sortOrder": 0,
         "isVisible": 1,
         "createdAt": 1791777090914,
-        "updatedAt": 1795493559022
+        "updatedAt": 1795493551000
       }
     ],
     "NewsCategory": [
@@ -1776,7 +1776,7 @@
         "status": "PUBLISHED",
         "publishedAt": 1791949432548,
         "createdAt": 1787644416776,
-        "updatedAt": 1795492202000,
+        "updatedAt": 1795493564112,
         "hoverImage": null,
         "seoTitle": null,
         "metaDescription": null,
@@ -1805,7 +1805,7 @@
         "status": "PUBLISHED",
         "publishedAt": 1791949432583,
         "createdAt": 1787644416828,
-        "updatedAt": 1795492202000,
+        "updatedAt": 1795493564112,
         "hoverImage": null,
         "seoTitle": null,
         "metaDescription": null,
@@ -1863,7 +1863,7 @@
         "status": "PUBLISHED",
         "publishedAt": 1791949432690,
         "createdAt": 1787644416959,
-        "updatedAt": 1795492202000,
+        "updatedAt": 1795493564113,
         "hoverImage": null,
         "seoTitle": null,
         "metaDescription": null,
@@ -2211,7 +2211,7 @@
         "status": "PUBLISHED",
         "publishedAt": 1791949432618,
         "createdAt": 1791949432618,
-        "updatedAt": 1795492202000,
+        "updatedAt": 1795493564115,
         "hoverImage": null,
         "seoTitle": null,
         "metaDescription": null,
@@ -2269,7 +2269,7 @@
         "status": "PUBLISHED",
         "publishedAt": 1791949432725,
         "createdAt": 1791949432726,
-        "updatedAt": 1795492202000,
+        "updatedAt": 1795493564116,
         "hoverImage": null,
         "seoTitle": null,
         "metaDescription": null,
@@ -10850,5 +10850,5 @@
       "size": 705394
     }
   ],
-  "releaseId": "dccc92c32a8fb90d079ab795ad2b0f57fd0292d76b50f1613558953debaf0ad1"
+  "releaseId": "7e90b650304c7fe66e41a773f55dcee8bfee14e3dd1833ab8cf7049b9784daaf"
 }
