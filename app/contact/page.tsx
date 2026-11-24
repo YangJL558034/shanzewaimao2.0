@@ -50,12 +50,12 @@ export default async function ContactPage() {
   const mapsEmbed = map.google_maps_embed_url ?? undefined;
   const mapsDirections = map.google_maps_directions_url ?? undefined;
   const defaultInfo = zh ? [
-    { title: "电话 / WhatsApp", value: map.phone || "+86 755 8888 9999", text: "周一至周六，8:30–18:00", image: "" },
+    { title: "电话", value: map.phone || "+86 755 8888 9999", text: "周一至周六，8:30–18:00", image: "" },
     { title: "电子邮箱", value: map.email || "sales@shanzesz.com", text: "24 小时内回复", image: "" },
     { title: "办公地址", value: map.company_name_zh || map.company_name || "山泽新能源科技", text: map.address_zh || map.address || "中国广东省深圳市工业路168号A栋", image: "" },
     { title: "工作时间", value: "", text: "周一至周五：8:30–18:00\n周六：8:30–12:00\n周日及法定节假日：休息", image: "" },
   ] : [
-    { title: "Phone / WhatsApp", value: map.phone || "+86 755 8888 9999", text: "Mon–Sat, 8:30 AM–6:00 PM", image: "" },
+    { title: "Phone", value: map.phone || "+86 755 8888 9999", text: "Mon–Sat, 8:30 AM–6:00 PM", image: "" },
     { title: "Email Us", value: map.email || "sales@shanzesz.com", text: "We reply within 24 hours", image: "" },
     { title: "Office Address", value: map.company_name || "Shanze New Energy Technology Co., Ltd.", text: map.address || "Building A, No.168 Industrial Road, Shenzhen, Guangdong, China", image: "" },
     { title: "Business Hours", value: "", text: "Monday–Friday: 8:30 AM–6:00 PM\nSaturday: 8:30 AM–12:00 PM\nSunday & Public Holiday: Closed", image: "" },

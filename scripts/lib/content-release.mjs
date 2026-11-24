@@ -213,7 +213,7 @@ export async function importContentRelease({ root, databasePath, apply = false, 
         // Match the original empty issuer-only placeholder when its name was edited.
         if (!existing && table === 'Certificate' && source.issuer && !source.certificateNo && !source.image) {
           const matching = db.prepare('SELECT * FROM Certificate WHERE issuer=? AND certificateNo IS NULL AND (image IS NULL OR image=\'\')').all(source.issuer);
-          if (matching.length === 1) existing = matching[0];
+          if (matching.length === 1 && ![...maps[table].values()].includes(matching[0].id)) existing = matching[0];
         }
         const destination = existing?.id || source.id;
         assert.ok(![...maps[table].values()].includes(destination), `Two source records resolve to the same ${table} row`);
