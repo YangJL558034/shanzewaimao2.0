@@ -7,6 +7,9 @@ import { ProductsCatalog } from "@/components/public/ProductsCatalog";
 import { getSeoMetadata, safeCanonicalUrl } from "@/lib/seo";
 import { getLocale, translateEntities } from "@/lib/i18n";
 import { getPageSectionMap } from "@/lib/page-content";
+import { productCategoryLanding } from "@/lib/product-categories";
+import { withProduct3d } from "@/lib/product-3d";
+import { redirect } from "next/navigation";
 import { JsonLd } from "@/components/public/JsonLd";
 import { absoluteUrl } from "@/lib/utils";
 import "./product-seo.css";
@@ -21,6 +24,8 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
 
 export default async function ProductsPage({ searchParams }: { searchParams: Promise<ProductQuery> }) {
   const category = firstCategory((await searchParams).category);
+  const landing = category ? productCategoryLanding(category) : "";
+  if (landing) redirect(landing);
   const locale = await getLocale();
   const [categories, products, rawBanners, section] = await Promise.all([
     db.productCategory.findMany({ where: { isVisible: true }, orderBy: { sortOrder: "asc" } }),
@@ -28,11 +33,13 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
     db.banner.findMany({ where: { page: "products", status: "PUBLISHED" }, orderBy: { sortOrder: "asc" } }),
     getPageSectionMap("products", locale),
   ]);
-  const [localizedCategories, localizedProducts, banners] = await Promise.all([
+  const [localizedCategories, localizedProductsRaw, banners] = await Promise.all([
     translateEntities("ProductCategory", categories, ["name", "description"], locale),
     translateEntities("Product", products, ["name", "features"], locale),
     translateEntities("Banner", rawBanners, ["title", "subtitle", "description", "ctaLabel"], locale),
   ]);
+  // Products with a 3D viewer (public/3d/<sku>.html) send "view details" straight to it.
+  const localizedProducts = withProduct3d(localizedProductsRaw, locale);
   const zh = locale === "zh";
   const banner = banners[0];
   const categoriesSection = section.categories;

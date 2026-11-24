@@ -18,3 +18,13 @@
 .products-sourcing-grid span { color:#0862d8; font-size:13px; font-weight:600; }
 @media(max-width:1000px) { .product-sourcing-cards,.products-sourcing-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 @media(max-width:600px) { .product-sourcing-cards,.products-sourcing-grid { grid-template-columns:1fr; } .product-rfq-card { flex-direction:column; align-items:flex-start; padding:23px; } .product-section-links { gap:9px 15px; font-size:12px; } }
+
+/* Keep catalogue cards the same height and pin the action to the bottom edge,
+   so buttons line up across a row even when the copy wraps to more lines. */
+.product-card, .category-card { display:flex; flex-direction:column; }
+.product-card > .card-body, .category-card > .card-body { display:flex; flex-direction:column; flex:1 1 auto; }
+.product-card > .card-body > .btn { margin-top:auto; }
+.category-card > .card-body > :is(.text-link, .category-select-button) { margin-top:auto; }
+.product-card .chips { margin-bottom:14px; }
+.category-card .card-body h3 { min-height:2.6em; }
+.product-card .card-body h3 { min-height:2.6em; }

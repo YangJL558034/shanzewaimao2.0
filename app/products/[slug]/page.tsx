@@ -14,6 +14,8 @@ import { productImageSource } from "@/lib/product-image";
 import { resolveSeoImage } from "@/lib/image-seo-data";
 import { PackageCheck } from "lucide-react";
 import { productContentCards, productFaqs, productMetadataFallback, productSourcingGuide, productSpecifications } from "@/lib/product-seo";
+import { product3dPath, withProduct3d } from "@/lib/product-3d";
+import { Boxes } from "lucide-react";
 import "../product-seo.css";
 
 const getPublishedProduct = cache((slug: string) => db.product.findFirst({
@@ -51,7 +53,8 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     translateEntity("ProductCategory", rawProduct.category, ["name"], locale),
     db.product.findMany({ where: { categoryId: rawProduct.categoryId, status: "PUBLISHED", id: { not: rawProduct.id } }, orderBy: [{ isFeatured: "desc" }, { sortOrder: "asc" }], take: 3 }),
   ]);
-  const relatedProducts = await translateEntities("Product", relatedRaw, ["name", "features"], locale);
+  const relatedProducts = withProduct3d(await translateEntities("Product", relatedRaw, ["name", "features"], locale), locale);
+  const viewer3d = product3dPath(product.sku, locale);
   const zh = locale === "zh";
   const galleryImages = [
     ...(product.coverImage ? [{ url: product.coverImage, alt: `${product.name} ${zh ? "产品主图" : "product view"}` }] : []),
@@ -95,7 +98,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
           {product.tagline && <p className="text-lg font-semibold">{product.tagline}</p>}
           <p className="section-copy product-summary">{product.summary}</p>
           {product.description && product.description !== product.summary && <p className="product-description">{product.description}</p>}
-          <div className="flex flex-wrap gap-4"><Link className="btn btn-primary" href={quoteHref}>{zh ? "获取此型号报价" : "Request This Model's Quote"}</Link><Link className="btn btn-outline" href="/contact">{zh ? "联系销售" : "Contact Sales"}</Link></div>
+          <div className="flex flex-wrap gap-4"><Link className="btn btn-primary" href={quoteHref}>{zh ? "获取此型号报价" : "Request This Model's Quote"}</Link>{viewer3d && <a className="btn btn-outline" href={viewer3d}><Boxes size={16} />{zh ? "查看 3D 模型" : "View 3D Model"}</a>}<Link className="btn btn-outline" href="/contact">{zh ? "联系销售" : "Contact Sales"}</Link></div>
         </div>
       </section>
       <nav className="product-section-links" aria-label={zh ? "产品内容导航" : "Product information"}>

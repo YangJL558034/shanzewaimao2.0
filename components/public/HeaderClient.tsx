@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { SeoImage } from "@/components/public/SeoImage";
 import { usePathname } from "next/navigation";
-import { Menu, PackageCheck, X } from "lucide-react";
+import { Menu, PackageCheck, X, ChevronDown } from "lucide-react";
 import { useEffect, useState } from "react";
+import "./header-nav.css";
 
-type Item = { id: string; label: string; href: string };
+type Item = { id: string; label: string; href: string; children?: Item[] };
 
 export function HeaderClient({
   items,
@@ -57,16 +58,59 @@ export function HeaderClient({
           className={`main-nav ${open ? "open" : ""}`}
           aria-label="Main navigation"
         >
-          {navigationItems.map((item) => (
-            <Link
-              key={item.id}
-              onClick={() => setOpen(false)}
-              href={item.href}
-              className={`nav-link ${path === item.href || (item.href !== "/" && path.startsWith(item.href)) ? "active" : ""}`}
-            >
-              {item.label}
-            </Link>
-          ))}
+          {navigationItems.map((item) => {
+            const children = (item.children ?? []).filter((child) => child.href && child.label);
+            const active = path === item.href
+              || (item.href !== "/" && path.startsWith(item.href))
+              || children.some((child) => path === child.href || path.startsWith(`${child.href}/`));
+            if (!children.length) {
+              return (
+                <Link
+                  key={item.id}
+                  onClick={() => setOpen(false)}
+                  href={item.href}
+                  className={`nav-link ${active ? "active" : ""}`}
+                >
+                  {item.label}
+                </Link>
+              );
+            }
+            return (
+              <div key={item.id} className={`nav-group ${active ? "is-active" : ""}`}>
+                <Link
+                  onClick={() => setOpen(false)}
+                  href={item.href}
+                  className={`nav-link ${active ? "active" : ""}`}
+                  aria-haspopup="true"
+                >
+                  {item.label}
+                  <ChevronDown size={13} className="nav-caret" aria-hidden="true" />
+                </Link>
+                <div className="nav-dropdown">
+                  {children.map((child) => (
+                    <Link
+                      key={child.id}
+                      href={child.href}
+                      onClick={(event) => {
+                        setOpen(false);
+                        // Already on that page? Just scroll to the section so the
+                        // click always gives feedback instead of doing nothing.
+                        const [path, hash] = child.href.split("#");
+                        if (!hash) return;
+                        if (path === `${location.pathname}${location.search}`) {
+                          event.preventDefault();
+                          document.getElementById(hash)?.scrollIntoView({ behavior: "smooth", block: "start" });
+                        }
+                      }}
+                      className={`nav-dropdown-link ${path === child.href || path.startsWith(`${child.href}/`) ? "active" : ""}`}
+                    >
+                      {child.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
           <div className="mobile-nav-tools">
             {locales.length > 1 && <label className="mobile-language-field">
               <span>{activeLocale === "zh" ? "网站语言" : "Language"}</span>

@@ -7,11 +7,11 @@ import { getVideoEmbedUrl, visualMediaKind } from "@/lib/media-url";
 import { productImageSource } from "@/lib/product-image";
 import "./product-media.css";
 
-export type CategoryCardData = { id: string; name: string; slug: string; description: string | null; image: string | null };
+export type CategoryCardData = { id: string; name: string; slug: string; description: string | null; image: string | null; href?: string };
 
 export function CategoryCard({ category, index, viewLabel = "View More", onSelect, selected = false }: { category: CategoryCardData; index: number; viewLabel?: string; onSelect?: (category: CategoryCardData) => void; selected?: boolean }) {
   const image = productImageSource(category.image);
-  return <article className={`card category-card ${selected ? "is-selected" : ""}`}>{image?<div className="card-art next-image-art"><SeoImage src={image} alt={`${category.name} product category`} fill sizes="(max-width: 700px) 100vw, 20vw" /></div>:<div className="card-art product-media-placeholder" aria-hidden="true"><PackageCheck size={42} strokeWidth={1.25}/></div>}<div className="card-body"><h3>{category.name}</h3><p>{category.description}</p>{onSelect ? <button type="button" className="text-link category-select-button" onClick={() => onSelect(category)}>{viewLabel} →</button> : <Link className="text-link" href={`/products?category=${category.slug}`}>{viewLabel} →</Link>}</div></article>;
+  return <article className={`card category-card ${selected ? "is-selected" : ""}`}>{image?<div className="card-art next-image-art"><SeoImage src={image} alt={`${category.name} product category`} fill sizes="(max-width: 700px) 100vw, 20vw" /></div>:<div className="card-art product-media-placeholder" aria-hidden="true"><PackageCheck size={42} strokeWidth={1.25}/></div>}<div className="card-body"><h3>{category.name}</h3><p>{category.description}</p>{category.href ? <Link className="text-link" href={category.href}>{viewLabel} →</Link> : onSelect ? <button type="button" className="text-link category-select-button" onClick={() => onSelect(category)}>{viewLabel} →</button> : <Link className="text-link" href={`/products?category=${category.slug}`}>{viewLabel} →</Link>}</div></article>;
 }
 
 export function CategoryCards({ categories, viewLabel = "View More", onSelect, selectedSlug }: { categories: CategoryCardData[]; viewLabel?: string; onSelect?: (category: CategoryCardData) => void; selectedSlug?: string }) {
@@ -27,6 +27,8 @@ export type ProductCardData = {
   features: string;
   isFeatured: boolean;
   categoryId: string;
+  /** When set, "view details" opens this address instead of /products/<slug>. */
+  href?: string;
 };
 
 function PrimaryProductMedia({ source, alt }: { source: string | null; alt: string }) {
@@ -47,7 +49,7 @@ export function ProductCards({ products, detailLabel = "View Details", newLabel 
         <PrimaryProductMedia source={product.coverImage} alt={product.name} />
         {hoverImage && <div className="card-art product-card-hover-media product-card-image-adaptive next-image-art"><SeoImage src={hoverImage} alt={`${product.name} additional product view`} fill sizes="(max-width: 700px) 100vw, 20vw" /></div>}
       </div>
-      <div className="card-body"><h3>{product.name}</h3><div className="chips">{features.slice(0, 2).map((feature, index) => <span className="chip" key={index}>{feature.title || "OEM Ready"}</span>)}</div><Link className="btn btn-primary btn-sm" href={`/products/${product.slug}`}>{detailLabel}</Link></div>
+      <div className="card-body"><h3>{product.name}</h3><div className="chips">{features.slice(0, 2).map((feature, index) => <span className="chip" key={index}>{feature.title || "OEM Ready"}</span>)}</div>{product.href ? <a className="btn btn-primary btn-sm" href={product.href}>{detailLabel}</a> : <Link className="btn btn-primary btn-sm" href={`/products/${product.slug}`}>{detailLabel}</Link>}</div>
     </article>;
   })}</div>;
 }
