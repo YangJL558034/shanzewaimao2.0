@@ -112,9 +112,27 @@ pm2 restart <应用名>
 | --- | --- | --- |
 | 没有该分类 | 自动新建，slug=`portable-power` | 无 |
 | 已有且 slug=`portable-power` | 更新名称/描述 | 无 |
-| 已有但 slug 不同（例如 `portable-power-copy-163224`） | **会多出一个分类** | 导入前先在后台把旧分类删除，或把它的 slug 改为 `portable-power` 后再导入 |
+| 已有但 slug 不同（例如 `portable-power-station`） | **会多出一个分类** | 按 4.2 合并 |
 
-若导入后才发现重复：在后台删除 slug 不是 `portable-power` 的那个，产品关联会随分类删除策略影响，删前先确认该分类下没有产品（本次两款产品都在 `portable-power` 分类下）。
+### 4.2 合并重复的便携储能分类（已发生在 2026-11 部署）
+
+本次部署时线上已存在 `portable-power-station` 分类（含 SZpw-120、SZpw-80、SZpw-60、LBW-1000-P350、Pioneer-1000-LBW 共 5 款产品），导入后又新建了 `portable-power`（含 SZ68DBGB26、SZ68DBGB23）。结果导航下拉出现两个近似的储能分类。
+
+**推荐保留原有的 `portable-power-station`**（产品多、上线早、可能已被外链引用），处理步骤：
+
+1. 后台 →「产品管理」：把 SZ68DBGB26、SZ68DBGB23 两款产品的「产品分类」改为 **portable power station**。
+2. 后台 →「产品分类」：删除 **Portable Energy Storage**（slug `portable-power`）这个重复分类。
+3. 顺带检查是否还有零产品的冗余分类（当前线上存在 `5000mah-semi-solid-state-battery-technology-safer-and-more-advanced`，0 款产品，可删除或改名）。
+4. 在**开发环境**重新导出并提交内容包，使仓库内容与线上一致：
+   ```bash
+   # 开发机，先把线上内容拉进本地库（或用后台导出文件替换 content/site-content.json）
+   npm run content:export
+   npm run content:test
+   git add content/site-content.json && git commit -m "chore(content): merge portable power categories"
+   ```
+
+代码侧已做兜底：`lib/product-categories.ts` 同时把 `portable-power` 与 `portable-power-station` 映射到 `/portable-power` 落地页，因此**合并前两个分类的入口都能正常进入 3D 落地页**，不会出现死链。
+
 
 ---
 
