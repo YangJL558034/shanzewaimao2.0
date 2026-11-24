@@ -609,18 +609,6 @@
       },
       {
         "id": "cmv4ptfmq006i84i6rwrb8mds",
-        "name": "portable power station",
-        "slug": "portable-power-station",
-        "description": "LiFePO4 battery generator for home outdoor, RV backup,  and  camping",
-        "image": "/content-assets/1791777063948-b015dfd71c55875f-bed5c655d5ec8341.jpg",
-        "icon": "portable power station",
-        "sortOrder": 0,
-        "isVisible": 1,
-        "createdAt": 1791777090914,
-        "updatedAt": 1791976506253
-      },
-      {
-        "id": "cmwu23q7c000q6qv4odnrpxcb",
         "name": "Portable Energy Storage",
         "slug": "portable-power",
         "description": "30,000 / 80,000 mAh · LiFePO₄ cells · DC and USB-C output",
@@ -628,8 +616,8 @@
         "icon": "",
         "sortOrder": 0,
         "isVisible": 1,
-        "createdAt": 1795486163304,
-        "updatedAt": 1795491396966
+        "createdAt": 1791777090914,
+        "updatedAt": 1795493559022
       }
     ],
     "NewsCategory": [
@@ -2293,7 +2281,7 @@
       },
       {
         "id": "cmwu3urz600016qkozv4mwpon",
-        "categoryId": "cmwu23q7c000q6qv4odnrpxcb",
+        "categoryId": "cmv4ptfmq006i84i6rwrb8mds",
         "name": "BR Portable Power Station 80,000mAh",
         "slug": "br-portable-power-station-80000mah",
         "sku": "SZ68DBGB26",
@@ -2322,7 +2310,7 @@
       },
       {
         "id": "cmwu3ut3c000h6qko3l74coh4",
-        "categoryId": "cmwu23q7c000q6qv4odnrpxcb",
+        "categoryId": "cmv4ptfmq006i84i6rwrb8mds",
         "name": "BR Portable Power Station 30,000mAh",
         "slug": "br-portable-power-station-30000mah",
         "sku": "SZ68DBGB23",
@@ -9594,7 +9582,7 @@
         "id": "cmwu23qfn000s6qv4lsspx6v8",
         "localeId": "cmt8dbvj5001t84zseac0hsnr",
         "entityType": "ProductCategory",
-        "entityId": "cmwu23q7c000q6qv4odnrpxcb",
+        "entityId": "cmv4ptfmq006i84i6rwrb8mds",
         "field": "name",
         "value": "便携式储能"
       },
@@ -9602,7 +9590,7 @@
         "id": "cmwu23qfn000u6qv4br1mjyyn",
         "localeId": "cmt8dbvj5001t84zseac0hsnr",
         "entityType": "ProductCategory",
-        "entityId": "cmwu23q7c000q6qv4odnrpxcb",
+        "entityId": "cmv4ptfmq006i84i6rwrb8mds",
         "field": "description",
         "value": "30,000 / 80,000 mAh · 磷酸铁锂电芯 · 直流与 Type-C 输出"
       },
@@ -10862,5 +10850,5 @@
       "size": 705394
     }
   ],
-  "releaseId": "76110a54507cfddc19a03b14516b85cd0f6e209b9e7d53e793ee5b52de31117c"
+  "releaseId": "dccc92c32a8fb90d079ab795ad2b0f57fd0292d76b50f1613558953debaf0ad1"
 }
