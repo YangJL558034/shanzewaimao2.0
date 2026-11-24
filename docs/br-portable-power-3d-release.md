@@ -68,6 +68,10 @@ ls -lh ~/backup | tail -5
 git pull --ff-only
 npm ci --include=dev
 npx prisma migrate status      # 应为 up to date
+
+# 4.0 先预览内容导入（只读，不写数据库），确认 created / updated / skipped / conflicts
+npm run content:preview
+
 npm run db:deploy              # storage:prepare → migrate deploy → 导入 content/site-content.json
 npm run build
 # 重启进程（按实际使用的管理器，二选一）
@@ -75,12 +79,30 @@ pm2 restart <应用名>
 # systemctl restart <服务名>
 ```
 
-说明：
+`content:preview` 输出示例与判读：
 
-- `npm run db:deploy` 在导入内容前会把一致性快照写入 `storage/private/content-release-backups/`，每个版本都留有回滚点。
-- 导入按 slug 匹配，**保留线上后台后来修改过的记录**，冲突会打印在输出的 `conflicts` 数组里。
-- 构建前会校验 `braces` 依赖补丁；不要使用 `--ignore-scripts`。
-- 不要在服务器运行 `npm run dev` 或 `prisma migrate dev`。
+```json
+{ "mode": "preview", "created": 2, "updated": 19, "skipped": 340, "conflicts": [] }
+```
+
+- `created`：内容包里新增、线上没有的记录（本次预期包含两款 BR 产品、便携式储能分类）
+- `updated`：线上已有且将被覆盖为内容包版本的记录
+- `skipped`：内容未变化，无需处理
+- `conflicts`：线上在最近一次导入后被人工修改过，**会被保留并跳过**。若这里有输出，先确认这些线上修改要不要保留，不要把 `conflicts` 当成错误
+
+`npm run db:deploy` 在导入内容前会把一致性快照写入 `storage/private/content-release-backups/`，每个版本都留有回滚点。
+
+### 4.0.1 导入是增量操作，不会删除线上数据
+
+导入实现（`scripts/lib/content-release.mjs`）**只有 INSERT 与 UPDATE，没有 DELETE**：
+
+- 线上有、内容包里没有的记录（例如运营在后台新增的其它产品、新闻、页面）→ **不做任何操作，原样保留**
+- 内容包里有、线上也有（按 `Product.slug`／`Product.sku`、`ProductCategory.slug` 等键匹配）→ 更新
+- 线上最近一次导入后被人工改过的同名记录 → 跳过并记录到 `conflicts`
+- 写入前执行 `PRAGMA foreign_key_check`，关联失败会整体回滚
+
+因此「线上已有其它产品」不会因本次发布而丢失。唯一需要注意的是排序：本次内容包把两款 BR 产品设为 `sortOrder 1、2`，其余已知产品为 3–12；**线上独有的产品保留它们自己的排序值**，可能与这些数字交叉。若在后台看到顺序不理想，直接在「产品管理 → 排序」里调整即可，不涉及数据丢失。
+
 
 ### 4.1 分类 slug 的三种情况
 
@@ -108,6 +130,8 @@ pm2 restart <应用名>
 | 6 | 打开 `/3d/sz68dbgb26.html?lang=zh` 与 `?lang=en` | 中文页全中文、英文页全英文（仅语言下拉里的「简体中文」保留母语写法） |
 | 7 | 首页其它页面 | `/`、`/about`、`/quality`、`/news` 均 200，CSP 仍为 `nonce + strict-dynamic` |
 | 8 | 后台「产品分类」 | 便携式储能只有一个，slug = `portable-power` |
+| 9 | 后台「产品管理」总数 | **不少于**升级前数量（线上原有产品未丢失），且能看到 2 款新 BR 产品 |
+| 10 | `npm run content:preview` 再跑一次 | `created: 0`、`conflicts: []`，说明本次已全部落实 |
 
 第 5 项用浏览器实际打开确认；`/portable-power` 首次加载会请求两个约 1MB 的 iframe（`loading="lazy"`），属正常。
 
